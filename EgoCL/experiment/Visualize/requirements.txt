@@ -1,0 +1,4 @@
+numpy>=1.22
+matplotlib>=3.5
+fastapi>=0.110
+uvicorn[standard]>=0.22

@@ -1,0 +1,87 @@
+import cv2
+
+from .TimeStamp import TimeStamp, TimeSpan
+
+class Video:
+    def __init__(self, config={}, s_ACTIVITY=None):
+        self.path = config.get('video_path', 'unknown_path.mp4')
+        self.TIMESPAN = TimeSpan.from_dict(config.get('TIMESPAN', {}), self, s_ACTIVITY)
+        self.clip_id = config.get('clip_id', "")
+        self.config = config
+        self.s_ACTIVITY = s_ACTIVITY
+        self.offset_s = 0.0
+    
+    def offset_start(self, start_s: float, EXPERIENCE):
+        self.TIMESPAN.offset_start(start_s, EXPERIENCE)
+    
+    @property
+    def start_s(self):
+        return self.TIMESPAN.STARTSTAMP.seconds_experience
+    
+    @property
+    def end_s(self):
+        return self.TIMESPAN.ENDSTAMP.seconds_experience
+
+    def __call__(self, t):
+        raise NotImplementedError
+        return False
+        if isinstance(t, int):
+            return self[t-self.offset_s]
+        elif isinstance(t, tuple) and len(t) == 2:
+            c = self.config.copy()
+            c['start_s'], c['end_s'] = t[0]-self.offset_s, t[1]-self.offset_s #???????????
+            return Video(c, self.s_ACTIVITY)
+
+    def __getitem__(self, t):
+        raise NotImplementedError
+        return False
+        if isinstance(t, int):
+            # get frame at second t (relative to self.start_s)
+            cap = cv2.VideoCapture(self.path)
+            if not cap.isOpened():
+                raise IOError(f'Cannot open video: {self.path}')
+
+            target_s = float(self.start_s + t) #FIXME
+            # seek by milliseconds
+            cap.set(cv2.CAP_PROP_POS_MSEC, target_s * 1000.0)
+            ret, frame = cap.read()
+            cap.release()
+
+            if not ret or frame is None:
+                raise IndexError(f'Could not read frame at {target_s}s from {self.path}')
+
+            # convert BGR (OpenCV) -> RGB
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            return frame
+        elif isinstance(t, tuple) and len(t) == 2:
+            c = self.config.copy()
+            c['start_s'], c['end_s'] = t[0], t[1]
+            return Video(c, self.s_ACTIVITY)
+
+    def __repr__(self):
+        return f'Video(path={self.path}, activity={self.s_ACTIVITY.name})'
+    
+    @property
+    def to_dict(self):
+        return {
+            'video_path': self.path,
+            'TIMESPAN': self.TIMESPAN.to_dict,
+            'clip_id': self.clip_id
+        }
+    
+    def from_dict(self, data_dict):
+        self.path = data_dict.get('video_path', 'unknown_path.mp4')
+        self.TIMESPAN = TimeSpan.from_dict(data_dict.get('TIMESPAN', {}), self, self.s_ACTIVITY)
+        self.clip_id = data_dict.get('clip_id', "")
+        self.config = data_dict
+    
+    @property
+    def duration_s(self):
+        return self.TIMESPAN.duration_s
+
+    def clip(self, start_s: float, end_s: float):
+        raise NotImplementedError
+        c = self.config.copy()
+        c['start_s'] = start_s
+        c['end_s'] = end_s
+        return Video(c, self.s_ACTIVITY)

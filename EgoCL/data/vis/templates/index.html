@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>视频回环自检</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <div class="container">
+    <!-- <header>
+      <h1>视频回环自检</h1>
+    </header> -->
+
+    <section class="controls">
+      <label for="videoSelect">选择视频：</label>
+      <select id="videoSelect" style="color:black"></select>
+    </section>
+
+    <section class="player">
+      <video id="video" controls preload="metadata" width="900"></video>
+    </section>
+
+    <section class="timeline">
+      <div id="tracks" class="tracks"></div>
+      <div id="currentLabel" class="current-label"></div>
+    </section>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+<style>
+html, body {
+  height: 100%;
+  margin: 0;
+  background-color: #000 !important;
+  color: #fff !important;
+}
+.container {
+  background: transparent !important;
+}
+video {
+  background: #000 !important;
+}
+.controls label,
+.controls select,
+.current-label,
+.tracks {
+  color: #fff !important;
+}
+</style>

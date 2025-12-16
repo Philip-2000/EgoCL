@@ -1,0 +1,17 @@
+{
+  "videos": [
+    {
+      "id": "sample",
+      "title": "示例视频",
+      "path": "sample.mp4",
+      "mime_type": "video/mp4",
+      "annotations": [
+        { "category": "事件", "start": 1, "end": 10, "label": "和李华一起吃饭" },
+        { "category": "事件", "start": 10, "end": 21, "label": "吃完饭去洗碗" },
+        { "category": "人物", "start": 0, "end": 10, "label": "李华" },
+        { "category": "地点", "start": 0, "end": 15, "label": "餐厅" },
+        { "category": "地点", "start": 16, "end": 21, "label": "厨房" }
+      ]
+    }
+  ]
+}

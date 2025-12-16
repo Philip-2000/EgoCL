@@ -1,0 +1,5 @@
+/home/yl/D/Ego4d/04ac4c40-22fd-42aa-a7f0-ee597ffb7058_activity.json	5424.599
+/home/yl/D/Ego4d/024713b7-b198-4502-a114-02ca0485353b_activity.json	1063.467
+/home/yl/D/Ego4d/000cd456-ff8d-499b-b0c1-4acead128a8b_activity.json	958.1
+/home/yl/D/Ego4d/03be7d83-7394-45b9-9f36-b55ad721aee1_activity.json	489.634
+/home/yl/D/Ego4d/04041aaa-d309-42db-b65c-dcaf86b9f96c_activity.json	470.767

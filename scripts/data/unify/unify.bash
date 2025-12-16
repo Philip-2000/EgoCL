@@ -1,0 +1,1 @@
+python $(dirname "${BASH_SOURCE[0]}")/unify.py --item_config $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/item.yaml

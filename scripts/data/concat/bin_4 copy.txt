@@ -1,0 +1,8 @@
+/home/yl/D/Ego4d/062ded0e-1df8-42d1-adaa-fc948e1cd7de_activity.json	4068.134
+/home/yl/D/Ego4d/04994ce8-9d47-44d6-a7b0-42b395e69390_activity.json	1474.567
+/home/yl/D/Ego4d/02995fb6-f8ac-4168-a60d-8a0b1a7210bd_activity.json	1057.034
+/home/yl/D/Ego4d/068c3c6b-fbbc-486f-bc4c-f56e26448a09_activity.json	708.011
+/home/yl/D/Ego4d/049cfb89-3bcc-4fa3-8d0e-4e7e218b05ae_activity.json	664.8
+/home/yl/D/Ego4d/054992d4-aa9a-4904-8699-3ecf422e0312_activity.json	147.467
+/home/yl/D/Ego4d/030c7542-09a7-42a1-a406-05ad4f397341_activity.json	123.264
+/home/yl/D/Ego4d/041b9423-9695-45cb-bc58-266af7f91039_activity.json	98.534

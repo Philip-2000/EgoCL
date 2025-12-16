@@ -1,0 +1,30 @@
+name: experiment
+EXPERIENCES:
+  - bin_0 #958s -> 15min58s, play with cat
+EXECUTIONS: testing
+METHODS: VideoMethod #DumpMethod #
+LOAD_STYLES: FORCE_LOAD
+LOAD_STYLE_QUESTIONS: FORCE_LOAD
+EXECUTION_KWARGS:
+  N: 2
+  SAMPLES: 1
+  MODEL: "Qwen3-VL-8B-Instruct"
+METHOD_KWARGS:
+  MODEL: "Qwen3-VL-8B-Instruct"
+  width: 540         #resize width for video understanding
+  atom_s: 90         #length in seconds for atom video understanding
+  num_segments: 60   #number of frames for atom video understanding
+  FPS: 4             #frame rate when we concatenate these frames into a NEW video, ONLY for video understanding model calls, such video's framerate is usually high, much higher than original video, in order to save space
+  I_Cant_See: False  #for debugging, to shortcut video understanding when the such calling is slow
+  I_Dont_Know: False  #for debugging, to shortcut question answering when the such calling is slow
+  VideoBufferSize: 1024  #size of the video buffer for caching video segments
+  strategy:
+    segment:
+      adjust: "None"
+      split: "Force"
+    memory:
+      adjust: "None"
+      split: "None"
+
+#(1) Organize 的操作想一想，搭建一下看看能不能行呢，
+#(-1)然后本质上，我们的问答触及到了这个真正重要的问题了吗？有必要吗？我反倒是认为，LVBench当中的东西重要一些些？但是此时此刻肯定是没工夫做LVBench什么的？因为那个不是Experience格式，

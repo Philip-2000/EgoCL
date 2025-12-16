@@ -1,0 +1,1 @@
+python $(dirname "${BASH_SOURCE[0]}")/memorize.py --file 1 --experience_name Unnamed_1117_11_38_12 #--item_config $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/item.yaml #

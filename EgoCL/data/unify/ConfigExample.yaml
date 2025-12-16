@@ -1,0 +1,36 @@
+base:
+  log_level: INFO
+  items: [] #highest level of priority, if specified, only these items will be processed
+  item_file: "" #lower level of priority than items, if specified, only items listed in this file will be processed
+  num: -1 #lowest level of priority, only if neither items nor item_file is specified, the first "num" items will be processed
+  #if num=-1, all items will be processed
+  #furthermore, we should support setting these three parameters through command line arguments, and that priority should be higher than this config file
+
+datasets:
+  ego4d:
+    # in_path: /mnt/data/raw_data/Ego4d
+    # out_path: /mnt/data/processed_data/Ego4d
+    # items: [] #highest level of priority, if specified, only these items will be processed
+    item_file: "/mnt/data/yl/C/EgoCL/scripts/unify/item_file.txt" #lower level of priority than items, if specified, only items listed in this file will be processed
+    # num: 8 #lowest level of priority, only if neither items nor item_file is specified, the first "num" items will be processed
+
+  # egtea:
+    # in_path: /mnt/data/raw_data/EGTEA #higher priority than RAW_PATHS_GLOBAL["egtea"]
+    # out_path: /mnt/data/processed_data/EGTEA
+    # items: [] #highest level of priority, if specified, only these items will be processed
+    # item_file: "/mnt/data/yl/C/EgoCL/scripts/unify/item_egtea.txt" #lower level of priority than items, if specified, only items listed in this file will be processed
+    # num: 8 #lowest level of priority, only if neither items nor item_file is specified, the first "num" items will be processed
+
+  # epic:
+    # in_path: /mnt/data/raw_data/EPIC-KITCHENS
+    # out_path: /mnt/data/processed_data/EPIC-KITCHENS
+    # items: [] #highest level of priority, if specified, only these items will be
+    # item_file: "" #lower level of priority than items, if specified, only items listed in this file will be processed
+    # num: 8 #lowest level of priority, only if neither items nor item_file
+
+  # egolife:
+    # in_path: /mnt/data/raw_data/EgoLife
+    # out_path: /mnt/data/processed_data/EgoLife
+    # items: [] #highest level of priority, if specified, only these items will be processed
+    # item_file: "" #lower level of priority than items, if specified, only items listed in this file will be processed
+    # num: 8 #lowest level of priority, only if neither items nor item_file is specified, the first "num" items will be processed
