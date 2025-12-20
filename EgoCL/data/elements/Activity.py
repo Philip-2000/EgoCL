@@ -1,5 +1,5 @@
 from .Annotation import Annos
-from .Video import Video
+from .Video import Videos
 import os, json
 
 from .TimeStamp import TimeStamp, TimeSpan
@@ -9,16 +9,15 @@ class Activity:
         self.name = activity_config.get('name', 'Unknown Activity')
         self.source = activity_config.get('source', 'Unknown Source')
         self.ANNOS = Annos(activity_config.get('ANNOS', {}), self)
-        self.VIDEO = Video(activity_config.get('VIDEO', {}), self)
+        self.VIDEOS= Videos(activity_config.get('VIDEOS', []), self)
         #self.start_s = 0.0 #FIXME
         self.s_EXPERIENCE = None
         self.TIMESPAN = TimeSpan.from_dict(activity_config.get('TIMESPAN', {}), None, self, self.s_EXPERIENCE)
         self.update_timespan()
 
-    def offset_start(self, start_experience_s: float, EXPERIENCE):
-        print(f"Activity.offset_start, start_experience_s={start_experience_s}, EXPERIENCE.name={EXPERIENCE.name}")
+    def offset_start(self, start_experience_s: float, EXPERIENCE): #print(f"Activity.offset_start, start_experience_s={start_experience_s}, EXPERIENCE.name={EXPERIENCE.name}")
         self.TIMESPAN.offset_start(start_experience_s, EXPERIENCE)
-        self.VIDEO.offset_start(start_experience_s, EXPERIENCE)
+        self.VIDEOS.offset_start(start_experience_s, EXPERIENCE)
         self.ANNOS.offset_start(start_experience_s, EXPERIENCE)
 
     def __iadd__(self, anno_dict):
@@ -27,13 +26,13 @@ class Activity:
     
     def update_timespan(self):
 
-        p = min(self.VIDEO.TIMESPAN.STARTSTAMP,  min([ANNO.TIMESPAN.STARTSTAMP for cat in self.ANNOS.ANNOS for ANNO in self.ANNOS.ANNOS[cat]]) if len(self.ANNOS.ANNOS) > 0 else self.VIDEO.TIMESPAN.STARTSTAMP)
+        p = min(self.VIDEOS.TIMESPAN.STARTSTAMP,  min([ANNO.TIMESPAN.STARTSTAMP for cat in self.ANNOS.ANNOS for ANNO in self.ANNOS.ANNOS[cat]]) if len(self.ANNOS.ANNOS) > 0 else self.VIDEOS.TIMESPAN.STARTSTAMP)
         
         self.TIMESPAN.STARTSTAMP.seconds_experience = p.seconds_experience
         self.TIMESPAN.STARTSTAMP.seconds_activity = p.seconds_activity
         self.TIMESPAN.STARTSTAMP.seconds_video = p.seconds_video
         
-        p = max(self.VIDEO.TIMESPAN.ENDSTAMP, max([ANNO.TIMESPAN.ENDSTAMP for cat in self.ANNOS.ANNOS for ANNO in self.ANNOS.ANNOS[cat]]) if len(self.ANNOS.ANNOS) > 0 else self.VIDEO.TIMESPAN.ENDSTAMP)
+        p = max(self.VIDEOS.TIMESPAN.ENDSTAMP, max([ANNO.TIMESPAN.ENDSTAMP for cat in self.ANNOS.ANNOS for ANNO in self.ANNOS.ANNOS[cat]]) if len(self.ANNOS.ANNOS) > 0 else self.VIDEOS.TIMESPAN.ENDSTAMP)
 
         self.TIMESPAN.ENDSTAMP.seconds_experience = p.seconds_experience
         self.TIMESPAN.ENDSTAMP.seconds_activity = p.seconds_activity
@@ -45,7 +44,7 @@ class Activity:
             self._cached_to_dict = {
                 'name': self.name,
                 'source': self.source, #dataset name
-                'VIDEO': self.VIDEO.to_dict,
+                'VIDEOS': self.VIDEOS.to_dict,
                 'ANNOS': self.ANNOS.to_dict,
                 'TIMESPAN': self.TIMESPAN.to_dict,
             }
@@ -59,9 +58,8 @@ class Activity:
     def from_dict(self, data_dict):
         self.name = data_dict.get('name', 'Unknown Activity')
         self.source = data_dict.get('source', 'Unknown Source')
-        self.VIDEO.from_dict(data_dict.get('VIDEO', {}))
+        self.VIDEOS.from_dict(data_dict.get('VIDEOS', []))
         self.ANNOS.from_dict(data_dict.get('ANNOS', {}))
-        print(data_dict['TIMESPAN'])
         self.TIMESPAN = TimeSpan.from_dict(data_dict.get('TIMESPAN', {}), None, self, self.s_EXPERIENCE)
 
     def load(self, in_dir):
@@ -82,7 +80,7 @@ class Activity:
         raise NotImplementedError
         A = Activity({"name": f"{self.name}_s{int(start_s)}_e{int(end_s)}", "source": self.source})
         A.ANNOS = self.ANNOS.clip(start_s, end_s) #FIXME
-        A.VIDEO = self.VIDEO.clip(start_s, end_s) #FIXME
+        A.VIDEOS= self.VIDEOS.clip(start_s, end_s) #FIXME
         return A
 
 

@@ -31,8 +31,7 @@ class Experiment:
             En.load()
 
 
-            #En(METHOD=getattr(__import__("EgoCL.method", fromlist=[method]), method)())
-            #continue
             M = getattr(__import__("EgoCL.method", fromlist=[method]), method)(Ee, EXECUTION=En, **self.exp_config.get("METHOD_KWARGS", {}))
+            continue
             En(METHOD=M)
         

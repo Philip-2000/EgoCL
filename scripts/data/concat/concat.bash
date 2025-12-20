@@ -1,1 +1,1 @@
-python $(dirname "${BASH_SOURCE[0]}")/concat.py --item_config $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/item.yaml --name bin_8
+python $(dirname "${BASH_SOURCE[0]}")/concat.py --item_config $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/item.yaml --name bin_1

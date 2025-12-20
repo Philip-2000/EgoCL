@@ -6,7 +6,7 @@ from os.path import join as opj
 RAW_ROOT = opj("/mnt", "data", "raw_data")
 RAW_PATHS_GLOBAL = { #key name are all lowercase
     "epic": opj("/home", "yl", "EPIC-KITCHENS"), #temporarily only support for yl on -p 1022
-    "ego4d": opj("/mnt", "data", "yl", "D", "Ego4D", "v2"),
+    "ego4d": opj(RAW_ROOT, "Ego4d", "v2"),
     "egtea": opj("/home", "yl", "EGTEA"),
     "egolife": opj(RAW_ROOT, "EgoLife"), #these datasets are welcomed to be places side by side under DATA_ROOT, so u only need to change DATA_ROOT if necessary
 }

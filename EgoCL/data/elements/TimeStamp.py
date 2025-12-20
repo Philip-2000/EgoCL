@@ -1,7 +1,11 @@
 import time
 
+DEFAULT_EXPERIENCE_START_BASE = 8*3600  #assuming experience starts at 8:00 AM
+
 class TimeStamp:
     def __init__(self):
+        self.second_natural = None
+
         self.EXPERIENCE = None
         self.seconds_experience = None
 
@@ -11,6 +15,17 @@ class TimeStamp:
         self.VIDEO = None
         self.seconds_video = None
     
+    @staticmethod
+    def ddhhmmss(second_natural: float):
+        days = int(second_natural // 86400)
+        rem = second_natural - days * 86400
+        hours = int(rem // 3600)
+        rem -= hours * 3600
+        minutes = int(rem // 60)
+        rem -= minutes * 60
+        seconds = rem
+        return f"{days:02d}-{hours:02d}:{minutes:02d}:{seconds:06.3f}"
+
     @staticmethod
     def human_time(seconds: float):
         days = int(seconds // 86400)
@@ -58,6 +73,7 @@ class TimeStamp:
         ts = cls()
         ts.seconds_experience = seconds
         ts.EXPERIENCE = EXPERIENCE
+        ts.seconds_natural = DEFAULT_EXPERIENCE_START_BASE + seconds  #assuming experience starts at 8:00 AM
 
         ACTIVITY = EXPERIENCE.get_activity_at_time(seconds)
         ts.ACTIVITY = ACTIVITY
@@ -84,6 +100,7 @@ class TimeStamp:
     def by_concat(cls, ts_activity, start_experience_s, EXPERIENCE, ACTIVITY, VIDEO):
         ts = cls()
         ts.seconds_experience = start_experience_s + ts_activity.seconds_activity
+        ts.seconds_natural = DEFAULT_EXPERIENCE_START_BASE + ts.seconds_experience  #assuming experience starts at 8:00 AM
         ts.EXPERIENCE = EXPERIENCE
         ts.ACTIVITY = ACTIVITY
         ts.seconds_activity = ts_activity.seconds_activity
@@ -124,6 +141,7 @@ class TimeStamp:
             return self.seconds_video > other.seconds_video
     
     def from_dict(self, data_dict, Video, Activity, Experience=None):
+        self.second_natural = data_dict.get('second_natural', None)
         self.seconds_experience = data_dict.get('seconds_experience_s', None)
         self.seconds_activity = data_dict.get('seconds_activity_s', None)
         self.seconds_video = data_dict.get('seconds_video_s', None)
@@ -135,18 +153,21 @@ class TimeStamp:
     @property
     def to_dict(self):
         return {
+            "second_natural": self.second_natural,
             "seconds_experience_s": self.seconds_experience,
             "seconds_activity_s": self.seconds_activity,
             "seconds_video_s": self.seconds_video
         }
     
     def offset_start(self, offset_s: float, EXPRIENCE):
-        print(f"TimeStamp.offset_start, offset_s={offset_s}, EXPRIENCE.name={EXPRIENCE.name}")
+        #print(f"TimeStamp.offset_start, offset_s={offset_s}, EXPRIENCE.name={EXPRIENCE.name}")
         self.seconds_experience = self.seconds_activity + offset_s
+        self.seconds_natural = DEFAULT_EXPERIENCE_START_BASE + self.seconds_experience  #assuming experience starts at 8:00 AM
         self.EXPERIENCE = EXPRIENCE
         
     def copy(self):
         ts = TimeStamp()
+        ts.second_natural = self.second_natural
         ts.seconds_experience = self.seconds_experience
         ts.seconds_activity = self.seconds_activity
         ts.seconds_video = self.seconds_video
@@ -201,13 +222,14 @@ class TimeSpan:
             return self.STARTSTAMP.seconds_activity > other.STARTSTAMP.seconds_activity or (self.STARTSTAMP.seconds_activity == other.STARTSTAMP.seconds_activity and self.duration_s > other.duration_s)
 
     @classmethod
-    def from_dict(cls, data_dict, Video, Activity, Experience=None):
+    def from_dict(cls, data_dict, VIDEOS, Activity, Experience=None):
+        from .Video import Videos
         start_dict = data_dict.get('STARTSTAMP', {})
         end_dict = data_dict.get('ENDSTAMP', {})
         STARTSTAMP = TimeStamp()
-        STARTSTAMP.from_dict(start_dict, Video, Activity, Experience)
+        STARTSTAMP.from_dict(start_dict, None if VIDEOS is None else VIDEOS[0] if isinstance(VIDEOS, Videos) else VIDEOS, Activity, Experience)
         ENDSTAMP = TimeStamp()
-        ENDSTAMP.from_dict(end_dict, Video, Activity, Experience)
+        ENDSTAMP.from_dict(end_dict, None if VIDEOS is None else VIDEOS[-1] if isinstance(VIDEOS, Videos) else VIDEOS, Activity, Experience)
         return cls(STARTSTAMP, ENDSTAMP)
     
     @property
@@ -218,7 +240,7 @@ class TimeSpan:
         }
     
     def offset_start(self, offset_s: float, EXPERIENCE):
-        print(f"TimeSpan.offset_start, offset_s={offset_s}, EXPERIENCE.name={EXPERIENCE.name}")
+        #print(f"TimeSpan.offset_start, offset_s={offset_s}, EXPERIENCE.name={EXPERIENCE.name}")
         self.STARTSTAMP.offset_start(offset_s, EXPERIENCE)
         self.ENDSTAMP.offset_start(offset_s, EXPERIENCE)
     

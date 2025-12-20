@@ -85,3 +85,64 @@ class Video:
         c['start_s'] = start_s
         c['end_s'] = end_s
         return Video(c, self.s_ACTIVITY)
+    
+
+class Videos:
+    def __init__(self, videos_list=[], s_ACTIVITY=None):
+        self.VIDEOS = [Video(v_config, s_ACTIVITY) for v_config in videos_list]
+        self.s_ACTIVITY = s_ACTIVITY
+
+    def offset_start(self, start_s: float, EXPERIENCE):
+        for VIDEO in self.VIDEOS: VIDEO.TIMESPAN.offset_start(start_s, EXPERIENCE)
+
+    @property
+    def STARTSTAMP(self):
+        if len(self.VIDEOS) == 0:
+            return TimeStamp()
+        return min([video.TIMESPAN.STARTSTAMP for video in self.VIDEOS])
+    
+    @property
+    def ENDSTAMP(self):
+        if len(self.VIDEOS) == 0:
+            return TimeStamp()
+        return max([video.TIMESPAN.ENDSTAMP for video in self.VIDEOS])
+
+    @property
+    def TIMESPAN(self):
+        return TimeSpan(self.STARTSTAMP, self.ENDSTAMP)
+    
+    @property
+    def duration_s(self):
+        return self.TIMESPAN.duration_s
+    
+    def __iadd__(self, video):
+        self.VIDEOS.append(video)
+        return self
+    
+    def __getitem__(self, index):
+        if isinstance(index, slice):
+            return Videos(self.VIDEOS[index])
+        elif isinstance(index, int):
+            return self.VIDEOS[index]
+        elif isinstance(index, str):
+            for video in self.VIDEOS:
+                if video.clip_id == index:
+                    return video
+            return None
+        
+    @property
+    def to_dict(self):
+        return [VIDEO.to_dict for VIDEO in self.VIDEOS]
+    
+    def from_dict(self, data_list):
+        self.VIDEOS = []
+        for video_dict in data_list:
+            v = Video()
+            v.from_dict(video_dict)
+            self.VIDEOS.append(v)
+        
+    def __iter__(self):
+        return iter(self.VIDEOS)
+    
+    def __len__(self):
+        return len(self.VIDEOS)

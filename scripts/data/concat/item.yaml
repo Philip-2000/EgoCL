@@ -11,7 +11,7 @@ datasets:
     # in_path: /mnt/data/raw_data/Ego4d
     # out_path: /mnt/data/processed_data/Ego4d
     # items: [] #highest level of priority, if specified, only these items will be processed
-    item_file: "bin_8.txt" #"item_ego4d.txt" #lower level of priority than items, if specified, only items listed in this file will be processed
+    item_file: "bin_1.txt" #"item_ego4d.txt" #lower level of priority than items, if specified, only items listed in this file will be processed
     # num: 8 #lowest level of priority, only if neither items nor item_file is specified, the first "num" items will be processed
 
   # egtea:

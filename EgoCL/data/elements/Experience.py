@@ -79,9 +79,9 @@ class Experience:
         for ad in data.get('activities', []):
             a = Activity({'name': ad.get('name', 'Unknown Activity'), 'source': ad.get('source', 'Unknown Source')})
             # load VIDEO and ANNOS if present
-            a.VIDEO.from_dict(ad.get('VIDEO', {}))
+            a.VIDEOS.from_dict(ad.get('VIDEOS', {}))
             a.ANNOS.from_dict(ad.get('ANNOS', {}))
-            a.TIMESPAN = TimeSpan.from_dict(ad.get('TIMESPAN', {}), a.VIDEO, a, None)
+            a.TIMESPAN = TimeSpan.from_dict(ad.get('TIMESPAN', {}), a.VIDEOS, a, None)
             acts.append(a)
         # construct Experience without re-computing timeline if timeline provided
         exp = cls(activities=[], start_s=data.get('start_s', 0.0), name=data.get('name', 'Unnamed'))

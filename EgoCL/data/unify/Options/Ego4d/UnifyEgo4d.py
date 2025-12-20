@@ -26,7 +26,7 @@ class UnifyEgo4d(UnifyBase):
             out = subprocess.check_output(cmd, stderr=subprocess.STDOUT).decode().strip()
             return float(out)
         except Exception:
-            return None
+            raise RuntimeError(f"ffprobe failed for file: {path}")
 
     def __call__(self, item, **kwargs):
         #print(item)
@@ -36,7 +36,7 @@ class UnifyEgo4d(UnifyBase):
             'name': item,
             'source': 'Ego4D',
             'ANNOS': {},
-            'VIDEO': {
+            'VIDEOS': [{
                 'video_path': f"{self.video_base}/{item}.mp4",
                 'TIMESPAN': {
                     'STARTSTAMP': {
@@ -51,7 +51,7 @@ class UnifyEgo4d(UnifyBase):
                 }
                 #'start_s': 0 if "start_s" not in kwargs else kwargs['start_s'],
                 #'end_s': self.__length(f"{self.video_base}/{item}.mp4") if "end_s" not in kwargs else kwargs['end_s']
-            }
+            }]
         }
         a = Activity(activity_config)
         self.ANNOEGO4D(a)
