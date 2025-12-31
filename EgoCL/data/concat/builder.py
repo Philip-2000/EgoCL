@@ -12,6 +12,9 @@ from typing import Optional, List
 
 
 def _activity_duration(activity, default=5.0):
+    """
+    Get the duration of an activity from its VIDEO metadata.
+    """
     try:
         v = activity.VIDEO.to_dict
         s = float(v.get('start_s', 0) or 0)

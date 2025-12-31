@@ -28,7 +28,7 @@ EPRC_ROOT = opj(EgoCL_ROOT, "Experience")
 #Method:
 
 
-CACHE_DIR = opj("/root", ".cache", "EgoCL")  # The cache directory for EgoCL
+CACHE_DIR = opj(EgoCL_ROOT, "Cache")  # The cache directory for EgoCL
 
 MEMORY_ROOT = opj(EgoCL_ROOT, "Memory")
 MEMORY_PATHS_GLOBAL = { #key name are all lowercase

@@ -13,6 +13,10 @@ class Question:
         self.score = None
         self.choices = choices
         self.QID = QID
+    
+    @property
+    def query(self):
+        return self.question + (" Options: " + " ".join([chr(65+i) + ". " + str(option) for i, option in enumerate(self.choices)]) if self.choices else "")
 
     @property
     def OPTIONAL(self):
@@ -111,8 +115,11 @@ class Questions:
             q.evaluate()
 
     def short_report(self, TIME):
-        scores = [q.score for q in self.QUESTIONS if abs(q.TIME.seconds_experience - TIME.seconds_experience)< 1e-1 and q.score is not None]
+        scores = [q.score for q in self.QUESTIONS if abs(q.TIME.seconds_experience - TIME.seconds_experience)< self.EXECUTION.METHOD.atom_s * 1.1 and q.score is not None]
         return f"At TIME {TIME.seconds_experience}s, {len(scores)} questions evaluated, Average Score: {sum(scores)/len(scores) if len(scores)>0 else 'N/A'}"
     
     def __iter__(self):
         return iter(self.QUESTIONS)
+    
+    def __len__(self):
+        return len(self.QUESTIONS)

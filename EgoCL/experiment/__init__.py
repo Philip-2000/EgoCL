@@ -1,3 +1,4 @@
+from .. import YOG
 from .AnnoExperiment import AnnoExperiment
 from .Experiment import Experiment
 from .Elements import Execution, Questions

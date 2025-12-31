@@ -1,4 +1,5 @@
 from ...Base import Respond
+from . import YOG
 class VideoRespond(Respond):
     def __init__(self, METHOD, **kwargs):
         super().__init__()
@@ -17,11 +18,10 @@ class VideoRespond(Respond):
                 from .. import RESPOND_PROMPT_SIMPLE as RESPOND_PROMPT
             else:
                 from .. import RESPOND_PROMPT as RESPOND_PROMPT
-        print("OPTIONAL ", OPTIONAL, " EGO ", self.EXPERIENCE.EGO)
+        YOG.info(("OPTIONAL ", OPTIONAL, " EGO ", self.EXPERIENCE.EGO, " VLM Model ", kwargs.get("MODEL", "Qwen3-VL-8B-Instruct")))
         
         from .. import RAG_PROMPT
         self.RETRIEVE = VideoRetrieve(self)
-        print(kwargs.get("MODEL", "Qwen3-VL-8B-Instruct"), "VideoRespond MODEL")
         self.VlmBase = MyLLM(kwargs.get("MODEL", "Qwen3-VL-8B-Instruct")) # QwenLLM() # QwenVLM() # DeepSeekLLM() #
         self.RESPOND_PROMPT, self.RAG_PROMPT = RESPOND_PROMPT, RAG_PROMPT
         self.I_Dont_Know = kwargs.get("I_Dont_Know", True) # False)#
@@ -46,10 +46,8 @@ class VideoRespond(Respond):
         import json
         hits = self.RETRIEVE(query)
         hits = json.dumps(hits, ensure_ascii=False)
-        print("hits, type is", type(hits), "\n", (hits))
+        YOG.debug(("VideoRespond Hits: ", hits), tag="VideoRespond")
         hits = self.VlmBase.text(self.RAG_PROMPT + hits)
-        # print("query", type(query))
-        # print(query)
         query = self.VlmBase.text(query)
         
         return self.VlmBase({"content":[{"text":self.RESPOND_PROMPT + hits + "\n\n" + query}]})

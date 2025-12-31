@@ -1,3 +1,4 @@
+from . import YOG
 from ...Base import Memorize
 
 class VideoMemorize(Memorize):
@@ -93,14 +94,14 @@ class VideoMemorize(Memorize):
             frame_clips.append(img_clip)
         sampled_clip = concatenate_videoclips(frame_clips, method="compose")
         sampled_clip.write_videofile(video_cache_path, codec="libx264", audio_codec="aac", logger=None, fps=self.FPS)
-        
-        print(f"Video cached at {video_cache_path}")
+                
+        YOG.debug(f"Video cached at {video_cache_path}", tag="Video Caching")
         self.VideoBufferState = (self.VideoBufferState + 1) % self.VideoBufferSize
         return video_cache_path
 
     def humanize_time(self, seconds):
         import time
-        return time.strftime("%H:%M:%S", time.gmtime(seconds))
+        return time.strftime("%H:%M:%S", time.gmtime(seconds.round(0)))
     
     def call(self, *args, **kwargs):
         from MyLm import call
@@ -109,6 +110,7 @@ class VideoMemorize(Memorize):
 
     def __call__(self, start_s, end_s):
         clip = self.EXPERIENCE.time_to_video(start_s, end_s)
+        #if clip is None: return
         end_s = min(end_s, start_s + clip.duration)  #just in case that the clip is shorter
         video_cache_path = self.__cache_video(clip, start_s, start_s + clip.duration)
         import time
@@ -117,11 +119,14 @@ class VideoMemorize(Memorize):
             summary = "fake response"
         else:
             summary = self.call({"content": self.content(video_cache_path=video_cache_path), "num_segments": self.num_segments})
-            print("Time at", start_s, "to", end_s, "num_segments=", self.num_segments, "VideoMemorize summary:", summary)
+            YOG.debug(("Time at", start_s, "to", end_s, "num_segments=", self.num_segments, "VideoMemorize summary:", summary), tag="VideoMemorize")
             one_time = time.time() - timer_start
             total_time = one_time * (self.EXPERIENCE.duration_s / (end_s - start_s))
             total_time_humanized = self.humanize_time(total_time)
-            print("Time taken for VideoMemorize model call:", one_time, "seconds, estimated total time for full video:", total_time, "seconds which is ", total_time_humanized, "ratio than the video time is ", total_time / self.EXPERIENCE.duration_s)
+            YOG.info(("Time at", start_s, "to", end_s,
+                "cached at ", video_cache_path, "Time cost for VideoMemorize model call:", one_time.round(3),
+                "seconds, estimated total time for full video:", total_time_humanized, 
+                "ratio than the video time is ", (total_time / self.EXPERIENCE.duration_s).round(2)), tag="VideoMemorize")
             timer_start = time.time()
         
         self.MEMORY(clip, self.__s2timespan(start_s, end_s), summary)

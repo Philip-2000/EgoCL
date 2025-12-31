@@ -90,7 +90,6 @@ class Experience:
 
     @classmethod
     def load(cls, in_path: str):
-        print(in_path)
         with open(in_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
         return cls.from_dict(data)
@@ -125,13 +124,19 @@ class Experience:
         if method.MEMORIZER.__class__.__name__ == "CheatMemorize":
             self.cheat_progress(method, start_s=start_s, end_s=end_s)
             return
-        for t in self.iterate_time(start_s=start_s, end_s=end_s):
-            method.MEMORIZER(self, t)
+        for s_s, e_s in self.iterate_time(start_s=start_s, end_s=end_s):
+            method.MEMORIZER(self, s_s)
 
     def cheat_progress(self, method, start_s, end_s):
         for anno in self.iterate_annos(start_s=start_s, end_s=end_s):
             method.MEMORIZER.Memory.append(anno.to_dict)
-
+        
+    def iterate_video(self, start_s=0.0, end_s=None):
+        assert start_s == 0.0 and end_s is None, "iterate_video currently only supports full experience iteration."
+        for act in self.ACTIVITIES: #其实是懒得写了，先这样吧
+            for video in act.VIDEOS:
+                yield video
+        
     def iterate_act(self, start_s=0.0, end_s=None):
         """Generator to iterate through activities within a time range."""
         for act in self.ACTIVITIES:
@@ -150,16 +155,64 @@ class Experience:
 
     def iterate_time(self, step_s=1.0, start_s=0.0, end_s=None):
         """Generator to iterate through time steps within the experience."""
-        current_s = start_s
+        # current_s = start_s
         end_s = end_s if end_s is not None else self.start_s + self.duration_s
+        # while current_s < end_s:
+        #     yield current_s
+        #     current_s += step_s
+        start_end_s_list = []
+        #我觉得还不如为这个start_s, step_s 和 end_s先生成一份时间秒数列表，然后再遍历这个时间戳列表更好一些
+        #那么生成这个列表的第一步，先找到这个start_s落在的ACTIVITY的位置ID，然后找到end_s落在的ACTIVITY的位置ID，然后再从start_s所在的ACTIVITY的start_s开始，遍历到end_s所在的ACTIVITY的end_s结束，中间每隔step_s生成一个时间戳
+        #注意如果current_s + step_s超过了当前ACTIVITY的end_s，那么就只输出到这个ACTIVITY的end_s为止，然后列表的下一项是下一个ACTIVITY的start_s，然后继续，
+        start_id = None
+        end_id = None
+        for act_id, act in enumerate(self.ACTIVITIES):
+            if act.TIMESPAN.STARTSTAMP.seconds_experience <= start_s < act.TIMESPAN.ENDSTAMP.seconds_experience:
+                start_id = act_id
+            if act.TIMESPAN.STARTSTAMP.seconds_experience < end_s <= act.TIMESPAN.ENDSTAMP.seconds_experience:
+                end_id = act_id
+            
+        assert start_id is not None and end_id is not None, "start_s or end_s not within experience range."
+        current_s = start_s
         while current_s < end_s:
-            yield current_s
-            current_s += step_s
+            act = self.ACTIVITIES[start_id]
+            if current_s + step_s < act.TIMESPAN.ENDSTAMP.seconds_experience:
+                start_end_s_list.append((current_s, current_s + step_s))
+                current_s += step_s
+            else:
+                start_end_s_list.append((current_s,act.TIMESPAN.ENDSTAMP.seconds_experience))
+                current_s = act.TIMESPAN.ENDSTAMP.seconds_experience
+                start_id += 1
+                if start_id > end_id:
+                    break
+                act = self.ACTIVITIES[start_id]
+                current_s = act.TIMESPAN.STARTSTAMP.seconds_experience
+        
+        for s_e in start_end_s_list:
+            yield s_e
         
     def time_to_timestamps(self, start_s: float, end_s: float):
         from . import TimeStamp
         TIMESTAMPS = []
         current_s = start_s
+
+        for act_id, act in enumerate(self.ACTIVITIES):
+            if act.TIMESPAN.STARTSTAMP.seconds_experience <= current_s < act.TIMESPAN.ENDSTAMP.seconds_experience:
+                for video_id, vid in enumerate(act.VIDEOS):
+                    if vid.TIMESPAN.STARTSTAMP.seconds_experience <= current_s < vid.TIMESPAN.ENDSTAMP.seconds_experience:
+                        #start one
+                        ts_start = vid.TIMESPAN.STARTSTAMP.template(current_s)
+                        TIMESTAMPS.append(ts_start)
+                        if vid.TIMESPAN.ENDSTAMP.seconds_experience < end_s:
+                            ts_end = vid.TIMESPAN.ENDSTAMP.copy()
+                            current_s = vid.TIMESPAN.ENDSTAMP.seconds_experience + 0.1
+                        else:
+                            ts_end = vid.TIMESPAN.STARTSTAMP.template(end_s)
+                            current_s = end_s
+                        TIMESTAMPS.append(ts_end)
+        
+        return TIMESTAMPS
+
         for act_id, act in enumerate(self.ACTIVITIES):
             if act.TIMESPAN.STARTSTAMP.seconds_experience <= current_s < act.TIMESPAN.ENDSTAMP.seconds_experience:
                 ts_current = TimeStamp()
@@ -206,24 +259,28 @@ class Experience:
     
     def time_to_video(self, start_s: float, end_s: float) -> Optional[float]:
         TIMESTAMPS = self.time_to_timestamps(start_s, end_s)
+        from . import YOG
+        # YOG.debug("\n".join([t.__repr__() for t in TIMESTAMPS]), "TIMESTAMPS in time_to_video")
         if len(TIMESTAMPS) < 2:
             return None
         import moviepy
 
         video_clips = []
-        for i in range(len(TIMESTAMPS) - 1):
+        for i in range(0, len(TIMESTAMPS), 2):
             ts_start = TIMESTAMPS[i]
             ts_end = TIMESTAMPS[i + 1]
             video = ts_start.VIDEO
             if video.path is None or not os.path.exists(video.path):
                 continue
             clip = moviepy.VideoFileClip(video.path)
-            clip = clip.subclipped(ts_start.seconds_video - video.start_s, min(ts_end.seconds_video - video.start_s, clip.duration-0.01))
+            video_start_s = video.TIMESPAN.STARTSTAMP.seconds_video
+            clip = clip.subclipped(ts_start.seconds_video - video_start_s, min(ts_end.seconds_video - video_start_s, clip.duration-0.01))
             video_clips.append(clip)
         if not video_clips:
             return None
         if len(video_clips) == 1:
             return video_clips[0]
+            
         final_clip = moviepy.concatenate_videoclips(video_clips)
         return final_clip
 

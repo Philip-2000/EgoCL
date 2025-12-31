@@ -1,5 +1,5 @@
 from ..Base import Method
-
+from . import YOG
 class VideoMethod(Method):
     def __init__(self, EXPERIENCE, **kwargs):
         super().__init__()
@@ -35,17 +35,14 @@ class VideoMethod(Method):
         return self.MEMORIZER.MEMORY
 
     def progress(self, start_s, end_s):
-        for current_s in self.EXPERIENCE.iterate_time(step_s=self.atom_s, start_s=start_s, end_s=end_s):
-            self.MEMORIZER(start_s=current_s, end_s=current_s + self.atom_s)
+        for s_s, e_s in self.EXPERIENCE.iterate_time(step_s=self.atom_s, start_s=start_s, end_s=end_s):
+            self.MEMORIZER(start_s=s_s, end_s=e_s)
     
     def query(self, query):#first check the self.RESPOND.TIME and self.TIME
-        print(self.RESPOND.TIME.seconds_experience, "self.RESPOND.TIME.seconds_experience")
-        print(self.TIME.seconds_experience, "self.TIME.seconds_experience")
-        
         if self.RESPOND.TIME.seconds_experience < self.TIME.seconds_experience:
             self.MEMORIZER.save()
             self.RESPOND.load(self.TIME.seconds_experience)
 
         s = self.RESPOND(query)
-        print("VideoMethod response:", s)
+        YOG.info(("VideoMethod response:", s))
         return s

@@ -60,7 +60,8 @@ class VideoRetrieve(Retrieve):
         """
         if self.matrix is None:
             return [{'entry': e, 'score': 0.0} for e in self._entries[:top_k]]
-        print("Querying VectorRetrieve with query:", query)
+        from . import YOG
+        YOG.info(("Querying VectorRetrieve with query:", query))
         qv = self.vectorizer.transform([query])
         sims = cosine_similarity(qv, self.matrix)[0]
         idxs = np.argsort(-sims)[:top_k]

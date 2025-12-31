@@ -1,6 +1,6 @@
 
 import os
-
+from . import YOG
 
 class QuestionGenerator:
     def __init__(self, **kwargs):
@@ -145,15 +145,14 @@ class Execution:
         from ...data.elements import TimeStamp
         from ...method import MEMORY_ROOT#, DumpRespond
         self.save()
+        self.METHOD = METHOD
         
         for q in self.QUESTIONS:
             if METHOD.TIME.seconds_experience < q.TIME.seconds_experience - 1e-1:
-                print(self.QUESTIONS.short_report(METHOD.TIME))
+                YOG.info(self.QUESTIONS.short_report(METHOD.TIME))
                 METHOD.progress(start_s=METHOD.TIME.seconds_experience, end_s=q.TIME.seconds_experience)
-            q.respond(METHOD.query(q.question))
+            q.respond(METHOD.query(q.query))
         
-        print(self.QUESTIONS.short_report(METHOD.TIME))
+        YOG.info(self.QUESTIONS.short_report(METHOD.TIME))
         
-        #self.QUESTIONS.evaluate_all()
         self.save()
-        #print(METHOD.MEMORY)

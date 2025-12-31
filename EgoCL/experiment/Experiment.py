@@ -8,7 +8,6 @@ class Experiment:
         self.LOAD_STYLES = exp_config.get("LOAD_STYLES", "FORCE_CREATE")
         self.LOAD_STYLE_QUESTIONS = exp_config.get("LOAD_STYLE_QUESTIONS", "FORCE_CREATE")
         self.EGO = exp_config.get("EGO", True)
-        print("Experiment EGO setting:", self.EGO)
         self.OPTIONAL = exp_config.get("OPTIONAL", False)
 
     def __call__(self):
@@ -30,8 +29,6 @@ class Experiment:
             En.EXPERIENCE = Ee
             En.load()
 
-
             M = getattr(__import__("EgoCL.method", fromlist=[method]), method)(Ee, EXECUTION=En, **self.exp_config.get("METHOD_KWARGS", {}))
-            continue
             En(METHOD=M)
         

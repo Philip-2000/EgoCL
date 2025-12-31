@@ -10,9 +10,9 @@ OPTIONAL: true
 EXECUTION_KWARGS:
   N: 2
   SAMPLES: 1
-  MODEL: "Qwen3-VL-8B-Instruct"
+  MODEL: "Qwen2.5-VL-7B-Instruct"
 METHOD_KWARGS:
-  MODEL: "Qwen3-VL-8B-Instruct"
+  MODEL: "Qwen2.5-VL-7B-Instruct"
   width: 540         #resize width for video understanding
   atom_s: 20         #length in seconds for atom video understanding
   num_segments: 20   #number of frames for atom video understanding

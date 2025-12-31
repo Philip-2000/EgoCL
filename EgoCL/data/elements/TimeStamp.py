@@ -176,6 +176,18 @@ class TimeStamp:
         ts.VIDEO = self.VIDEO
         return ts
 
+    def template(self, seconds_experience_s: float):
+        ts = TimeStamp()
+        ts.seconds_experience = seconds_experience_s
+        ts.EXPERIENCE = self.EXPERIENCE
+        shift = seconds_experience_s - self.seconds_experience
+        ts.seconds_natural = self.second_natural + shift if self.second_natural is not None else None
+        ts.seconds_activity = self.seconds_activity + shift if self.seconds_activity is not None else None
+        ts.ACTIVITY = self.ACTIVITY
+        ts.seconds_video = self.seconds_video + shift if self.seconds_video is not None else None
+        ts.VIDEO = self.VIDEO
+        return ts
+
     def related_to(self, TS):  #self.related_to(TS), if TS is 2 seconds later than self (i.e., self<TS, TS-self=2), then say "2 seconds earlier"
         #give a string to describe the time relationship between self and TS
         if self < TS:

@@ -127,7 +127,7 @@ class VideoMemClip:
         else:
             from ... import SUMMARIZE_CLIP_PROMPT
         PROMPT = SUMMARIZE_CLIP_PROMPT(self)
-        print(f"Summarizing clip with prompt: {PROMPT}")
+        # print(f"Summarizing clip with prompt: {PROMPT}")
         self.meta["summary"] = self.call({"content": [{"text":PROMPT}]})
         #self.data += "\n" + self.VIDEO_MEM_ATOMS[-1].data
         #self.meta["description"] = f"VideoMemClip from {self.TIMESPAN.STARTSTAMP.seconds_experience} to {self.TIMESPAN.ENDSTAMP.seconds_experience}, containing {len(self.VIDEO_MEM_ATOMS)} atoms."
@@ -239,19 +239,19 @@ class VideoMemSegment:
             adjustment = int(adjustment_match.group(1))
             if adjustment != 0:
                 if adjustment > 0:
-                    print("Adjusting segments by", adjustment)
+                    # print("Adjusting segments by", adjustment)
                     #move atoms from last clip to second last clip
                     for _ in range(adjustment):
                         atom = self.VIDEO_MEM_CLIPS[-1].pop_front_atom()
                         self.VIDEO_MEM_CLIPS[-2].push_back_atom(atom)
                 else:
-                    print("Adjusting segments by", adjustment)
+                    # print("Adjusting segments by", adjustment)
                     #move atoms from second last clip to last clip
                     for _ in range(-adjustment):
                         atom = self.VIDEO_MEM_CLIPS[-2].pop_back_atom()
                         self.VIDEO_MEM_CLIPS[-1].push_front_atom(atom)
                 return [len(self.VIDEO_MEM_CLIPS)-2, len(self.VIDEO_MEM_CLIPS)-1]
-        print("No adjustment needed")
+        # print("No adjustment needed")
         return []
 
     def separate(self):
@@ -275,15 +275,15 @@ class VideoMemSegment:
                     self.VIDEO_MEM_CLIPS.append(new_clip)
                     clip_id_sets = [len(self.VIDEO_MEM_CLIPS)-2, len(self.VIDEO_MEM_CLIPS)-1]
         
-        print(f"Separating clip at index {separate_index}" if len(clip_id_sets) > 0 else "No separation needed")
+        # print(f"Separating clip at index {separate_index}" if len(clip_id_sets) > 0 else "No separation needed")
         return clip_id_sets
 
     def separate_force(self):
         CLIP = self.VIDEO_MEM_CLIPS[-1]
         if len(CLIP.VIDEO_MEM_ATOMS) <= 1:
-            print("No separation needed, only one atom in clip.")
+            # print("No separation needed, only one atom in clip.")
             return [-1]
-        print("Separating clip, ", 1, "atoms will be moved to new clip, remaining ", len(CLIP.VIDEO_MEM_ATOMS)-1, "atoms in current clip.")
+        # print("Separating clip, ", 1, "atoms will be moved to new clip, remaining ", len(CLIP.VIDEO_MEM_ATOMS)-1, "atoms in current clip.")
         new_clip = VideoMemClip(SEGMENT=self)
         ATOM = CLIP.pop_back_atom()
         new_clip.push_front_atom(ATOM)
@@ -297,7 +297,7 @@ class VideoMemSegment:
         else:
             from ... import SUMMARIZE_SEGMENT_PROMPT
         PROMPT = SUMMARIZE_SEGMENT_PROMPT(self)
-        print(f"Summarizing segment with prompt: {PROMPT}")
+        # print(f"Summarizing segment with prompt: {PROMPT}")
         self.meta["summary"] = self.call({"content": [{"text":PROMPT}]})
 
     def organize(self):
@@ -459,13 +459,13 @@ class VideoMemory(Memory):
         else:
             adjustment = 0
         if adjustment == 0:
-            print("No adjustment needed")
+            # print("No adjustment needed")
             return []
         elif adjustment > 0:
             if adjustment > len(self.VIDEO_MEM_SEGMENTS[-1].VIDEO_MEM_CLIPS):
-                print("Invalid adjustment value, larger than len(self.VIDEO_MEM_SEGMENTS[-1].VIDEO_MEM_CLIPS)")
+                # print("Invalid adjustment value, larger than len(self.VIDEO_MEM_SEGMENTS[-1].VIDEO_MEM_CLIPS)")
                 return []
-            print("Adjusting segments by", adjustment)
+            # print("Adjusting segments by", adjustment)
             #move some clips from latter segment to former segment
             for _ in range(adjustment):
                 clip = self.VIDEO_MEM_SEGMENTS[-1].pop_front_clip()
@@ -473,9 +473,9 @@ class VideoMemory(Memory):
             return [len(self.VIDEO_MEM_SEGMENTS)-2, len(self.VIDEO_MEM_SEGMENTS)-1]
         else:
             if -adjustment > len(self.VIDEO_MEM_SEGMENTS[-2].VIDEO_MEM_CLIPS):
-                print("Invalid adjustment value, larger than len(self.VIDEO_MEM_SEGMENTS[-2].VIDEO_MEM_CLIPS)")
+                # print("Invalid adjustment value, larger than len(self.VIDEO_MEM_SEGMENTS[-2].VIDEO_MEM_CLIPS)")
                 return []
-            print("Adjusting segments by", adjustment)
+            # print("Adjusting segments by", adjustment)
             #move some clips from former segment to latter segment
             for _ in range(-adjustment):
                 clip = self.VIDEO_MEM_SEGMENTS[-2].pop_back_clip()
@@ -496,12 +496,12 @@ class VideoMemory(Memory):
         else:
             separation = 0
         if separation == 0:
-            print("No separation needed")
+            # print("No separation needed")
             return []
         if separation < 0 or separation >= len(SEGMENT.VIDEO_MEM_CLIPS):
-            print("Invalid separation index")
+            # print("Invalid separation index")
             return []
-        print("Separating segment, ", separation, "clips will be moved to new segment, remaining ", len(SEGMENT.VIDEO_MEM_CLIPS)-separation, "clips in current segment.")
+        # print("Separating segment, ", separation, "clips will be moved to new segment, remaining ", len(SEGMENT.VIDEO_MEM_CLIPS)-separation, "clips in current segment.")
         new_segment = VideoMemSegment(self)
         for _ in range(separation):
             clip = SEGMENT.pop_back_clip()
@@ -511,7 +511,7 @@ class VideoMemory(Memory):
 
     def separate_force(self):
         SEGMENT = self.VIDEO_MEM_SEGMENTS[-1]
-        print("Separating segment, ", separation, "clips will be moved to new segment, remaining ", len(SEGMENT.VIDEO_MEM_CLIPS)-separation, "clips in current segment.")
+        # print("Separating segment, ", separation, "clips will be moved to new segment, remaining ", len(SEGMENT.VIDEO_MEM_CLIPS)-separation, "clips in current segment.")
         new_segment = VideoMemSegment(self)
         clip = SEGMENT.pop_back_clip()
         new_segment.push_front_clip(clip)
