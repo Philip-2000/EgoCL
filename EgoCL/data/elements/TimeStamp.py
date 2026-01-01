@@ -4,7 +4,7 @@ DEFAULT_EXPERIENCE_START_BASE = 8*3600  #assuming experience starts at 8:00 AM
 
 class TimeStamp:
     def __init__(self):
-        self.second_natural = None
+        self.seconds_natural = None
 
         self.EXPERIENCE = None
         self.seconds_experience = None
@@ -16,9 +16,9 @@ class TimeStamp:
         self.seconds_video = None
     
     @staticmethod
-    def ddhhmmss(second_natural: float):
-        days = int(second_natural // 86400)
-        rem = second_natural - days * 86400
+    def ddhhmmss(seconds_natural: float):
+        days = int(seconds_natural // 86400)
+        rem = seconds_natural - days * 86400
         hours = int(rem // 3600)
         rem -= hours * 3600
         minutes = int(rem // 60)
@@ -66,7 +66,7 @@ class TimeStamp:
         return self.time_hu('experience')
 
     def __repr__(self):
-        return f"TimeStamp(EXPERIENCE_s={self.seconds_experience}, ACTIVITY_s={self.seconds_activity}, VIDEO_s={self.seconds_video})"
+        return f"TimeStamp(EXPERIENCE_s={self.seconds_experience}, ACTIVITY_s={self.seconds_activity}, VIDEO_s={self.seconds_video}" + ((", N" + f"{self.seconds_natural}") if self.seconds_natural is not None else "") + ")"
     
     @classmethod
     def from_experience(cls, seconds, EXPERIENCE=None):
@@ -141,7 +141,7 @@ class TimeStamp:
             return self.seconds_video > other.seconds_video
     
     def from_dict(self, data_dict, Video, Activity, Experience=None):
-        self.second_natural = data_dict.get('second_natural', None)
+        self.seconds_natural = data_dict.get('seconds_natural_s', None)
         self.seconds_experience = data_dict.get('seconds_experience_s', None)
         self.seconds_activity = data_dict.get('seconds_activity_s', None)
         self.seconds_video = data_dict.get('seconds_video_s', None)
@@ -153,21 +153,20 @@ class TimeStamp:
     @property
     def to_dict(self):
         return {
-            "second_natural": self.second_natural,
+            "seconds_natural_s": self.seconds_natural,
             "seconds_experience_s": self.seconds_experience,
             "seconds_activity_s": self.seconds_activity,
             "seconds_video_s": self.seconds_video
         }
     
-    def offset_start(self, offset_s: float, EXPRIENCE):
-        #print(f"TimeStamp.offset_start, offset_s={offset_s}, EXPRIENCE.name={EXPRIENCE.name}")
+    def offset_start(self, offset_s: float, EXPERIENCE):
         self.seconds_experience = self.seconds_activity + offset_s
         self.seconds_natural = DEFAULT_EXPERIENCE_START_BASE + self.seconds_experience  #assuming experience starts at 8:00 AM
-        self.EXPERIENCE = EXPRIENCE
+        self.EXPERIENCE = EXPERIENCE
         
     def copy(self):
         ts = TimeStamp()
-        ts.second_natural = self.second_natural
+        ts.seconds_natural = self.seconds_natural
         ts.seconds_experience = self.seconds_experience
         ts.seconds_activity = self.seconds_activity
         ts.seconds_video = self.seconds_video
@@ -181,7 +180,7 @@ class TimeStamp:
         ts.seconds_experience = seconds_experience_s
         ts.EXPERIENCE = self.EXPERIENCE
         shift = seconds_experience_s - self.seconds_experience
-        ts.seconds_natural = self.second_natural + shift if self.second_natural is not None else None
+        ts.seconds_natural = self.seconds_natural + shift if self.seconds_natural is not None else None
         ts.seconds_activity = self.seconds_activity + shift if self.seconds_activity is not None else None
         ts.ACTIVITY = self.ACTIVITY
         ts.seconds_video = self.seconds_video + shift if self.seconds_video is not None else None
@@ -252,7 +251,6 @@ class TimeSpan:
         }
     
     def offset_start(self, offset_s: float, EXPERIENCE):
-        #print(f"TimeSpan.offset_start, offset_s={offset_s}, EXPERIENCE.name={EXPERIENCE.name}")
         self.STARTSTAMP.offset_start(offset_s, EXPERIENCE)
         self.ENDSTAMP.offset_start(offset_s, EXPERIENCE)
     

@@ -10,6 +10,7 @@ class Video:
         self.config = config
         self.s_ACTIVITY = s_ACTIVITY
         self.offset_s = 0.0
+        self.transcript_path = config.get('transcript_path', 'unknown_path.srt')
     
     def offset_start(self, start_s: float, EXPERIENCE):
         self.TIMESPAN.offset_start(start_s, EXPERIENCE)
@@ -66,11 +67,15 @@ class Video:
         return {
             'video_path': self.path,
             'TIMESPAN': self.TIMESPAN.to_dict,
-            'clip_id': self.clip_id
+            'clip_id': self.clip_id,
+            'transcript_path': self.transcript_path
         }
     
     def from_dict(self, data_dict):
         self.path = data_dict.get('video_path', 'unknown_path.mp4')
+        self.transcript_path = data_dict.get('transcript_path', 'unknown_path.srt')
+        import pysrt
+        self.transcripts = pysrt.open(self.transcript_path) if self.transcript_path != 'unknown_path.srt' else []
         self.TIMESPAN = TimeSpan.from_dict(data_dict.get('TIMESPAN', {}), self, self.s_ACTIVITY)
         self.clip_id = data_dict.get('clip_id', "")
         self.config = data_dict

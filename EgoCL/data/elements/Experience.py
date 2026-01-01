@@ -262,10 +262,11 @@ class Experience:
         from . import YOG
         # YOG.debug("\n".join([t.__repr__() for t in TIMESTAMPS]), "TIMESTAMPS in time_to_video")
         if len(TIMESTAMPS) < 2:
-            return None
+            return None, []
         import moviepy
 
-        video_clips = []
+        video_clips, transcripts = [], []
+        _0_experience_start_s = TIMESTAMPS[0].seconds_experience
         for i in range(0, len(TIMESTAMPS), 2):
             ts_start = TIMESTAMPS[i]
             ts_end = TIMESTAMPS[i + 1]
@@ -276,13 +277,36 @@ class Experience:
             video_start_s = video.TIMESPAN.STARTSTAMP.seconds_video
             clip = clip.subclipped(ts_start.seconds_video - video_start_s, min(ts_end.seconds_video - video_start_s, clip.duration-0.01))
             video_clips.append(clip)
+
+            if video.transcript_path and os.path.exists(video.transcript_path):
+                import pysrt
+                subs = pysrt.open(video.transcript_path)
+                clip_subs = subs.slice(starts_after={'seconds': ts_start.seconds_video}, ends_before={'seconds': ts_end.seconds_video})
+                # adjust subtitle times to be relative to the clip start
+                for sub in clip_subs:
+                    sub_start_seconds_origin = sub.start.hours * 3600 + sub.start.minutes * 60 + sub.start.seconds + sub.start.milliseconds / 1000.0
+                    sub_start_seconds_real = sub_start_seconds_origin - video_start_s + (ts_start.seconds_experience - _0_experience_start_s)
+                    sub.start.hours = int(sub_start_seconds_real // 3600)
+                    sub.start.minutes = int((sub_start_seconds_real % 3600) // 60)
+                    sub.start.seconds = int(sub_start_seconds_real % 60)
+                    sub.start.milliseconds = int((sub_start_seconds_real - int(sub_start_seconds_real)) * 1000)
+                    
+                    sub_end_seconds_origin = sub.end.hours * 3600 + sub.end.minutes * 60 + sub.end.seconds + sub.end.milliseconds / 1000.0
+                    sub_end_seconds_real = sub_end_seconds_origin - video_start_s + (ts_start.seconds_experience - _0_experience_start_s)
+                    sub.end.hours = int(sub_end_seconds_real // 3600)
+                    sub.end.minutes = int((sub_end_seconds_real % 3600) // 60)
+                    sub.end.seconds = int(sub_end_seconds_real % 60)
+                    sub.end.milliseconds = int((sub_end_seconds_real - int(sub_end_seconds_real)) * 1000)
+                    
+                    transcripts.append(sub)
+
         if not video_clips:
-            return None
+            return None, []
         if len(video_clips) == 1:
-            return video_clips[0]
+            return video_clips[0], transcripts
             
         final_clip = moviepy.concatenate_videoclips(video_clips)
-        return final_clip
+        return final_clip, transcripts
 
 class Experiences:
     """Container for multiple Experience objects"""
