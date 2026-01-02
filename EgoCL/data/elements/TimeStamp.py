@@ -232,17 +232,13 @@ class TimeSpan:
         if self.STARTSTAMP.seconds_activity is not None and other.STARTSTAMP.seconds_activity is not None and self.STARTSTAMP.ACTIVITY == other.STARTSTAMP.ACTIVITY:
             return self.STARTSTAMP.seconds_activity > other.STARTSTAMP.seconds_activity or (self.STARTSTAMP.seconds_activity == other.STARTSTAMP.seconds_activity and self.duration_s > other.duration_s)
 
-    @classmethod
-    def from_dict(cls, data_dict, VIDEOS, Activity, Experience=None):
+    def from_dict(self, data_dict, VIDEOS, Activity, Experience=None):
         from .Video import Videos
         start_dict = data_dict.get('STARTSTAMP', {})
         end_dict = data_dict.get('ENDSTAMP', {})
-        STARTSTAMP = TimeStamp()
-        STARTSTAMP.from_dict(start_dict, None if VIDEOS is None else VIDEOS[0] if isinstance(VIDEOS, Videos) else VIDEOS, Activity, Experience)
-        ENDSTAMP = TimeStamp()
-        ENDSTAMP.from_dict(end_dict, None if VIDEOS is None else VIDEOS[-1] if isinstance(VIDEOS, Videos) else VIDEOS, Activity, Experience)
-        return cls(STARTSTAMP, ENDSTAMP)
-    
+        self.STARTSTAMP.from_dict(start_dict, None if VIDEOS is None else VIDEOS[0] if isinstance(VIDEOS, Videos) else VIDEOS, Activity, Experience)
+        self.ENDSTAMP.from_dict(end_dict, None if VIDEOS is None else VIDEOS[-1] if isinstance(VIDEOS, Videos) else VIDEOS, Activity, Experience)
+        
     @property
     def to_dict(self):
         return {

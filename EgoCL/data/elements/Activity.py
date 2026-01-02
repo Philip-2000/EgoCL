@@ -12,7 +12,8 @@ class Activity:
         self.VIDEOS= Videos(activity_config.get('VIDEOS', []), self)
         #self.start_s = 0.0 #FIXME
         self.s_EXPERIENCE = None
-        self.TIMESPAN = TimeSpan.from_dict(activity_config.get('TIMESPAN', {}), None, self, self.s_EXPERIENCE)
+        self.TIMESPAN = TimeSpan(TimeStamp(), TimeStamp())
+        self.TIMESPAN.from_dict(activity_config.get('TIMESPAN', {}), None, self, self.s_EXPERIENCE)
         self.update_timespan()
 
     def offset_start(self, start_experience_s: float, EXPERIENCE): #print(f"Activity.offset_start, start_experience_s={start_experience_s}, EXPERIENCE.name={EXPERIENCE.name}")

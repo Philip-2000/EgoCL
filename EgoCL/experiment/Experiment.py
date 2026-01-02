@@ -9,6 +9,7 @@ class Experiment:
         self.LOAD_STYLE_QUESTIONS = exp_config.get("LOAD_STYLE_QUESTIONS", "FORCE_CREATE")
         self.EGO = exp_config.get("EGO", True)
         self.OPTIONAL = exp_config.get("OPTIONAL", False)
+        self.ckpt = exp_config.get("ckpt", "latest") #("new", "%06d", "latest")
 
     def __call__(self):
         from .Elements import Execution
@@ -23,12 +24,13 @@ class Experiment:
             method = self.METHODS if isinstance(self.METHODS, str) else self.METHODS[id]
 
             En = Execution(name=execution_name, load_style=load_style, load_style_questions=load_style_questions, **self.exp_config.get("EXECUTION_KWARGS", {}))
-            Ee = Experience.load_from_name(experience_name=experience_name)
-            Ee.EGO = self.EGO
+            En.EXPERIENCE = Experience.load_from_name(experience_name=experience_name)
+            En.EXPERIENCE.EGO = self.EGO
             En.OPTIONAL = self.OPTIONAL
-            En.EXPERIENCE = Ee
+            En.ckpt = self.ckpt
+            
+            En.METHOD = getattr(__import__("EgoCL.method", fromlist=[method]), method)(En.EXPERIENCE, EXECUTION=En, **self.exp_config.get("METHOD_KWARGS", {}))
             En.load()
 
-            M = getattr(__import__("EgoCL.method", fromlist=[method]), method)(Ee, EXECUTION=En, **self.exp_config.get("METHOD_KWARGS", {}))
-            En(METHOD=M)
+            En()
         

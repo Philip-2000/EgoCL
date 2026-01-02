@@ -110,6 +110,9 @@ class VideoMemorize(Memorize):
     def call(self, *args, **kwargs):
         from MyLm import call
         return call(self.MODEL, *args, **kwargs)
+    
+    def load(self, ckpt):
+        return self.MEMORY.load(ckpt)
 
     def transform_transcripts(self, transcripts):
         # transcripts is a list of pysrts.Subtitle, please convert it to time + text
@@ -153,12 +156,12 @@ class VideoMemorize(Memorize):
             summary = self.call({"content": self.content(video_cache_path=video_cache_path, transcripts=transcripts), "num_segments": self.num_segments})
             YOG.debug(("Time at", start_s, "to", end_s, "num_segments=", self.num_segments, "VideoMemorize summary:", summary), tag="VideoMemorize")
             one_time = time.time() - timer_start
-            total_time = one_time * (self.EXPERIENCE.duration_s / (end_s - start_s))
-            total_time_humanized = self.humanize_time(total_time)
-            YOG.info(("Time at", start_s, "to", end_s,
-                "cached at ", video_cache_path, "Time cost for VideoMemorize model call:", round(one_time, 3),
-                "seconds, estimated total time for full video:", total_time_humanized, 
-                "ratio than the video time is ", round(total_time / self.EXPERIENCE.duration_s, 2)), tag="VideoMemorize")
+            remain_time = one_time * (self.EXPERIENCE.duration_s - end_s) / (end_s - start_s)
+            remain_time_humanized = self.humanize_time(remain_time)
+            YOG.info(("Time at", start_s, "to", end_s, #"cached at ", video_cache_path,
+                "Time cost for VideoMemorize model call:", round(one_time, 3),
+                "seconds, estimated remain time:", remain_time_humanized, 
+                "ratio than the video:", round(remain_time / (self.EXPERIENCE.duration_s - end_s), 2)), tag="VideoMemorize")
             timer_start = time.time()
         
         metaa = {

@@ -34,6 +34,9 @@ class VideoMethod(Method):
     def MEMORY(self):
         return self.MEMORIZER.MEMORY
 
+    def load(self, ckpt):
+        return self.MEMORIZER.load(ckpt)
+
     def progress(self, start_s, end_s):
         for s_s, e_s in self.EXPERIENCE.iterate_time(step_s=self.atom_s, start_s=start_s, end_s=end_s):
             self.MEMORIZER(start_s=s_s, end_s=e_s)

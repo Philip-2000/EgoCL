@@ -2,6 +2,7 @@ name: experiment
 EXPERIENCES:
   - EgoLifeQA_A1_J
 EGO: true
+ckpt: latest #new # "000689" #
 EXECUTIONS: benches
 METHODS: VideoMethod #DumpMethod #
 LOAD_STYLES: FORCE_LOAD

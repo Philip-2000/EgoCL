@@ -33,6 +33,7 @@ class Question:
     @property
     def to_dict(self):
         return {
+            'uid': self.QID,
             'TIME': self.TIME.to_dict if self.TIME is not None else None,
             'question': self.question,
             'ref_time': self.ref_time.to_dict if self.ref_time is not None else None,
@@ -40,6 +41,14 @@ class Question:
             'response': self.response,
             'score': self.score,
             'choices': self.choices
+        }
+    
+    @property
+    def res_dict(self):
+        return {
+            'uid': self.QID,
+            'response': self.response,
+            'score': self.score
         }
 
     def from_dict(self, data_dict, load_style_respond="FORCE_LOAD"):
@@ -54,6 +63,7 @@ class Question:
         self.response = data_dict.get('response', None) if load_style_respond == "FORCE_LOAD" else None #For FORCE_CREATE, we do not load response, wishing the method to give new response later
         self.score = data_dict.get('score', None) if load_style_respond == "FORCE_LOAD" else None
         self.choices = data_dict.get('choices', None)
+        self.QID = data_dict.get('uid', None)
 
     def respond(self, response: str):
         self.response = response
@@ -86,6 +96,9 @@ class Questions:
         self.load_style_question = load_style_question
         self.load_style_respond = load_style_respond
     
+    def sort_by_time(self):
+        sorted(self.QUESTIONS, key=lambda x: x.TIME.seconds_experience)
+
     def __iadd__(self, question: Question):
         self.QUESTIONS.append(question)
         question.QUESTIONS = self
@@ -109,6 +122,26 @@ class Questions:
     @property
     def to_dict(self):
         return [q.to_dict for q in self.QUESTIONS]
+
+    def save_res(self, dir):
+        import os, json
+        os.makedirs(dir, exist_ok=True)
+        file_path = os.path.join(dir, "results.json")
+        with open(file_path, 'w') as f:
+            json.dump([q.res_dict for q in self.QUESTIONS if q.response is not None], f, indent=4)
+    
+    def load_res(self, dir):
+        import os, json
+        file_path = os.path.join(dir, "results.json")
+        if not os.path.exists(file_path):
+            return
+        with open(file_path, 'r') as f:
+            res_list = json.load(f)
+        res_dict = {res['uid']: res for res in res_list}
+        for q in self.QUESTIONS:
+            if q.QID in res_dict:
+                q.response = res_dict[q.QID]['response']
+                q.score = res_dict[q.QID]['score']
 
     def evaluate_all(self):
         for q in self.QUESTIONS:

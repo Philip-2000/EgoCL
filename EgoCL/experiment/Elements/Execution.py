@@ -41,8 +41,10 @@ class Execution:
         self.load_style = load_style
         self.load_style_questions = load_style_questions
         self.load_style_respond = load_style_respond
+        self.ckpt = kwargs.get("ckpt", "latest") #("new", "%06d", "latest")
         self.N = N
         self.SAMPLES = SAMPLES
+        self.METHOD = None
 
     @property
     def file_name(self):
@@ -78,7 +80,8 @@ class Execution:
                 QID+=1
         
     
-    def load(self):
+    def load(self, ckpt=""):
+        ckpt = ckpt if ckpt != "" else self.ckpt
         import json, os
         load_style = self.load_style
         if load_style == "FORCE_CREATE":
@@ -90,7 +93,16 @@ class Execution:
                 self.from_dict(data, EXPERIENCE=self.EXPERIENCE, load_style_questions=self.load_style_questions)
             else:
                 raise FileNotFoundError(f"Execution file not found: {self.file_name}")
-    
+
+            if ckpt == "new":
+                return
+            ts6d = self.METHOD.load(ckpt)
+            from ...paths import MEMORY_DIR
+            self.QUESTIONS.load_res(os.path.join(MEMORY_DIR(self.EXPERIENCE, self.METHOD), ts6d))
+            self.QUESTIONS.sort_by_time()
+        else:
+            raise ValueError(f"Unknown load_style: {load_style}")
+
     def from_dict(self, data: dict, EXPERIENCE = None, load_style_questions="FORCE_LOAD"):
         self.name = data.get('name', 'Unknown Execution')
         self.EXPERIENCE = EXPERIENCE
@@ -141,17 +153,22 @@ class Execution:
         with open(self.file_name, 'w') as f:
             json.dump(self.to_dict, f, indent=4)
 
-    def __call__(self, METHOD):
+    def __call__(self):
         from ...data.elements import TimeStamp
         from ...method import MEMORY_ROOT#, DumpRespond
-        self.save()
-        self.METHOD = METHOD
+        from ...paths import MEMORY_DIR
+        
+        METHOD = self.METHOD
         
         for q in self.QUESTIONS:
+            if q.TIME.seconds_experience < METHOD.TIME.seconds_experience - 1e-1: continue
+
             if METHOD.TIME.seconds_experience < q.TIME.seconds_experience - 1e-1:
                 YOG.info(self.QUESTIONS.short_report(METHOD.TIME))
                 METHOD.progress(start_s=METHOD.TIME.seconds_experience, end_s=q.TIME.seconds_experience)
+            
             q.respond(METHOD.query(q.query))
+            self.QUESTIONS.save_res(os.path.join(MEMORY_DIR(self.EXPERIENCE, self.METHOD), "%06d" % int(METHOD.TIME.seconds_experience)))
         
         YOG.info(self.QUESTIONS.short_report(METHOD.TIME))
         

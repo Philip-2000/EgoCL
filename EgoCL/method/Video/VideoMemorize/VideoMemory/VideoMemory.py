@@ -30,7 +30,7 @@ class VideoMemAtom:
         return self.CLIP.MODEL
     
     def from_dict(self, dict_data):
-        self.TIMESPAN = TimeSpan(None, None)
+        self.TIMESPAN = TimeSpan(TimeStamp(), TimeStamp())
         self.TIMESPAN.from_dict(dict_data['TIMESPAN'], None, None)
         self.data = dict_data['data']
         self.meta = dict_data['meta']
@@ -413,11 +413,21 @@ class VideoMemory(Memory):
     def load(self, seconds_experience):
         from .... import MEMORY_ROOT
         from os.path import join as opj
+        if isinstance(seconds_experience, str) and seconds_experience == "latest":
+            import os
+            exp_mem_path = opj(MEMORY_ROOT, self.EXPERIENCE.name, self.METHOD.name)
+            if not os.path.exists(exp_mem_path):
+                raise FileNotFoundError(f"Memory path not found: {exp_mem_path}")
+            available_times = [int(name) for name in os.listdir(exp_mem_path) if name.isdigit()]
+            if len(available_times) == 0:
+                raise FileNotFoundError(f"No memory checkpoints found in: {exp_mem_path}")
+            seconds_experience = max(available_times)
         path = opj(MEMORY_ROOT, self.EXPERIENCE.name, self.METHOD.name, f"{int(seconds_experience):06d}", "memory.json")
         import json
         with open(path, 'r') as f:
             data = json.load(f)
         self.from_dict(data)
+        return "%06d" % int(seconds_experience)
 
     def __call__(self, clip, TIMESPAN, summary, meta=None):
         atom = VideoMemAtom(data=summary, meta=meta if meta is not None else {}, CLIP=None)

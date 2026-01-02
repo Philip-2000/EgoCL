@@ -75,13 +75,14 @@ class Experience:
     @classmethod
     def from_dict(cls, data: dict): #这个from_dict和to_dict我觉得以后需要重新写，重新替换一下，现在是完全存储然后完全加载活动的全部信息；我想改成存储活动文件的路径，和加载方式，然后加载活动文件来构建活动对象；但这个是底层的东西，可以到时候替换的，不影响上层逻辑；顶多就是前一个版本的经历文件和后一个版本的经历文件不兼容而已
         acts = []
-        from . import TimeSpan
+        from . import TimeSpan, TimeStamp
         for ad in data.get('activities', []):
             a = Activity({'name': ad.get('name', 'Unknown Activity'), 'source': ad.get('source', 'Unknown Source')})
             # load VIDEO and ANNOS if present
             a.VIDEOS.from_dict(ad.get('VIDEOS', {}))
             a.ANNOS.from_dict(ad.get('ANNOS', {}))
-            a.TIMESPAN = TimeSpan.from_dict(ad.get('TIMESPAN', {}), a.VIDEOS, a, None)
+            a.TIMESPAN = TimeSpan(TimeStamp(), TimeStamp())
+            a.TIMESPAN.from_dict(ad.get('TIMESPAN', {}), a.VIDEOS, a, None)
             acts.append(a)
         # construct Experience without re-computing timeline if timeline provided
         exp = cls(activities=[], start_s=data.get('start_s', 0.0), name=data.get('name', 'Unnamed'))

@@ -5,7 +5,8 @@ from .TimeStamp import TimeStamp, TimeSpan
 class Video:
     def __init__(self, config={}, s_ACTIVITY=None):
         self.path = config.get('video_path', 'unknown_path.mp4')
-        self.TIMESPAN = TimeSpan.from_dict(config.get('TIMESPAN', {}), self, s_ACTIVITY)
+        self.TIMESPAN = TimeSpan(TimeStamp(), TimeStamp())
+        self.TIMESPAN.from_dict(config.get('TIMESPAN', {}), self, s_ACTIVITY)
         self.clip_id = config.get('clip_id', "")
         self.config = config
         self.s_ACTIVITY = s_ACTIVITY
@@ -76,7 +77,8 @@ class Video:
         self.transcript_path = data_dict.get('transcript_path', 'unknown_path.srt')
         import pysrt
         self.transcripts = pysrt.open(self.transcript_path) if self.transcript_path != 'unknown_path.srt' else []
-        self.TIMESPAN = TimeSpan.from_dict(data_dict.get('TIMESPAN', {}), self, self.s_ACTIVITY)
+        self.TIMESPAN = TimeSpan(TimeStamp(), TimeStamp())
+        self.TIMESPAN.from_dict(data_dict.get('TIMESPAN', {}), self, self.s_ACTIVITY)
         self.clip_id = data_dict.get('clip_id', "")
         self.config = data_dict
     
