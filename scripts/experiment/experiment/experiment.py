@@ -7,7 +7,7 @@ def parse():
 
 if __name__ == "__main__":
     import yaml
-    from EgoCL.experiment import Experiment
+    from EgoCL import Experiment
     args = parse()
     E = Experiment(yaml.safe_load(open(args.config_path)))
     E()

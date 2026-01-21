@@ -1,7 +1,8 @@
 from .. import YOG
 from .AnnoExperiment import AnnoExperiment
 from .Experiment import Experiment
-from .Elements import Execution, Questions
+from .Elements import Execution, Questions, Answering
+from .Visualize import Visualize
 from ..paths import EXPERIMENT_ROOT
 
 QUESTION_GENERATOR_PROMPT="You are a question generator which generate a question based on the provided experience annotations.\

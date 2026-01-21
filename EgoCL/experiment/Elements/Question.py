@@ -52,19 +52,42 @@ class Question:
             'open_ended': getattr(self, 'open_ended', None)
         }
     
-    def res_dict(self, CACHE_DIR):
+    def res_dict(self, CACHE_DIR, caching_video=True):
         return {
             'uid': self.QID,
             'TIME': self.TIME.to_dict if self.TIME is not None else None,
             'question': self.question,
             'ref_time': self.ref_time.to_dict if self.ref_time is not None else None,
-            'ground_truth': self.ground_truth(CACHE_DIR),
+            'ground_truth': self.ground_truth(CACHE_DIR, caching_video=caching_video),
             'answer': self.answer,
             'choices': self.choices,
             'response': (self.response.res_dict if hasattr(self.response, "res_dict") else str(self.response)) if self.response is not None else None,
             'score': self.score,
             'open_ended': (self.open_ended.res_dict if hasattr(self.open_ended, "res_dict") else str(self.open_ended)) if getattr(self, 'open_ended', None) is not None else None,
         }
+    
+    def save_res(self, dir, caching_video=True):
+        import os, json
+        os.makedirs(dir, exist_ok=True)
+        cache_dir = os.path.join(dir, "..", "RefVideos")
+        os.makedirs(cache_dir, exist_ok=True)
+        file_path = os.path.join(dir, "results.json")
+        if os.path.exists(file_path):
+            json_data = json.load(open(file_path, 'r'))
+            json_data = [q for q in json_data if q['uid'] != self.QID] + [self.res_dict(CACHE_DIR=cache_dir, caching_video=caching_video)]
+            with open(file_path, 'w') as f:
+                json.dump(json_data, f, indent=4, ensure_ascii=False)
+        else:
+            with open(file_path, 'w') as f:
+                json.dump([self.res_dict(CACHE_DIR=cache_dir, caching_video=caching_video)], f, indent=4, ensure_ascii=False)
+    
+
+    def save_res(self, CACHE_DIR, caching_video=True):
+        import os, json
+        os.makedirs(CACHE_DIR, exist_ok=True)
+        file_path = os.path.join(CACHE_DIR, f"{self.EXPERIENCE.name}_{self.QID}_result.json")
+        with open(file_path, 'w') as f:
+            json.dump(self.res_dict(CACHE_DIR, caching_video=caching_video), f, indent=4, ensure_ascii=False)
 
     def from_dict(self, data_dict, load_style_respond="FORCE_LOAD"):
         from ...data.elements import TimeStamp, TimeSpan
@@ -91,7 +114,7 @@ class Question:
             self.response = self.METHOD.VlmBase({"content":[{"text": full_prompt}]})
             self.evaluate()
     
-    def __cache_video(self, CACHE_DIR, clip, start_s, end_s):
+    def __cache_video(self, CACHE_DIR, clip, start_s, end_s, caching_video=True):
         import os
         # from ...paths import CACHE_DIR
         os.makedirs(CACHE_DIR, exist_ok=True)
@@ -134,11 +157,15 @@ class Question:
             text_list.append(f"[{start_time}-{end_time}] {text}")
         return text_list
 
-    def ground_truth(self, CACHE_DIR):
+    def ground_truth(self, CACHE_DIR, caching_video=True):
+
         video, transcript = self.EXPERIENCE.time_to_video(max(self.ref_time.STARTSTAMP.seconds_experience-5.0,0.0), min(self.ref_time.ENDSTAMP.seconds_experience+5.0, self.EXPERIENCE.duration_s))
         
-        video_path = self.__cache_video(CACHE_DIR,video, max(self.ref_time.STARTSTAMP.seconds_experience-5.0,0.0), min(self.ref_time.ENDSTAMP.seconds_experience+5.0, self.EXPERIENCE.duration_s))
-        
+        if caching_video:
+            video_path = self.__cache_video(CACHE_DIR,video, max(self.ref_time.STARTSTAMP.seconds_experience-5.0,0.0), min(self.ref_time.ENDSTAMP.seconds_experience+5.0, self.EXPERIENCE.duration_s), caching_video=caching_video)
+        else:
+            video_path = os.path.join(CACHE_DIR, f"{self.EXPERIENCE.name}_{self.QID}_{int(start_s)}_{int(end_s)}.mp4")
+
         return {'video_path': video_path, 'transcript': self.transform_transcripts(transcript)}
 
     def evaluate(self):
@@ -200,14 +227,14 @@ class Questions:
     def to_dict(self):
         return [q.to_dict for q in self.QUESTIONS]
 
-    def save_res(self, dir):
+    def save_res(self, dir, caching_video=True):
         import os, json
         os.makedirs(dir, exist_ok=True)
         cache_dir = os.path.join(dir, "..", "RefVideos")
         os.makedirs(cache_dir, exist_ok=True)
         file_path = os.path.join(dir, "results.json")
         with open(file_path, 'w') as f:
-            json.dump([q.res_dict(CACHE_DIR=cache_dir) for q in self.QUESTIONS if q.response is not None], f, indent=4, ensure_ascii=False)
+            json.dump([q.res_dict(CACHE_DIR=cache_dir, caching_video=caching_video) for q in self.QUESTIONS if q.response is not None], f, indent=4, ensure_ascii=False)
     
     def load_res(self, dir):
         import os, json

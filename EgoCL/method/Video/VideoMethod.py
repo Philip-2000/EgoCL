@@ -51,11 +51,10 @@ class VideoMethod(Method):
             one_time = time.time() - timer_start
             remain_time = one_time * (self.EXPERIENCE.duration_s - e_s) / (e_s - s_s)
             remain_time_humanized = time.strftime("%H:%M:%S", time.gmtime(remain_time))
-            YOG.info((f"Time log for segment {s_s}-{e_s}: {time_log}"), tag="VideoMemorize")
             YOG.info(("Time at", s_s, "to", e_s, #"cached at ", video_cache_path,
                 "Time cost for VideoMemorize model call:", round(one_time, 3),
                 "seconds, estimated remain time:", remain_time_humanized, 
-                "ratio than the video:", round(remain_time / max(self.EXPERIENCE.duration_s - e_s, 1e-2), 2)), tag="VideoMemorize")
+                "ratio than the video:", round(remain_time / max(self.EXPERIENCE.duration_s - e_s, 1e-2), 2), "Time Log:", time_log), tag="VideoMemorize")
             timer_start = time.time()
 
             one_time_avg = ((one_time_avg[0] * one_time_avg[1] + one_time) / (one_time_avg[1] + 1), one_time_avg[1] + 1)

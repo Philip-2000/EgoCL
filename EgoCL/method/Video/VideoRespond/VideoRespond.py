@@ -83,7 +83,7 @@ class VideoRespond(Respond):
         # hits = json.dumps(self.RETRIEVE(query), ensure_ascii=False)
         
         hits = self.RETRIEVE(query, top_k=3) #hits is a list of strings
-        print("hits", hits)
+        # print("hits", hits)
         YOG.debug(("VideoRespond Hits: ", hits), tag="VideoRespond")
         
         SYSTEM_PROMPT, USER_PROMPT = self.RESPOND_PROMPT(hits, query)

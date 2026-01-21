@@ -1,1 +1,1 @@
-python $(dirname "${BASH_SOURCE[0]}")/visualize.py --input /mnt/data/yl/W/EgoCL_Experiment/testing --output /mnt/data/yl/W/EgoCL_Visualize/testing/testing.json.gz
+python $(dirname "${BASH_SOURCE[0]}")/visualize.py  -e EgoR1Bench_A1_JAKE_D1 -m VideoMethod

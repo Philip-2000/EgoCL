@@ -31,5 +31,5 @@ METHOD_KWARGS:
       summarize: Empty
   width: 540
 OPTIONAL: true
-ckpt: latest #new
+ckpt: new
 name: experiment

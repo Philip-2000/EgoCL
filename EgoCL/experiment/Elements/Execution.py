@@ -88,15 +88,9 @@ class Execution:
         if load_style == "FORCE_CREATE":
             self.random_execution()
         elif load_style == "FORCE_LOAD":
-            if os.path.exists(self.file_name):
-                with open(self.file_name, 'r') as f:
-                    data = json.load(f)
-                self.from_dict(data, EXPERIENCE=self.EXPERIENCE, load_style_questions=self.load_style_questions)
-            else:
-                raise FileNotFoundError(f"Execution file not found: {self.file_name}")
-
-            if ckpt == "new":
-                return
+            if os.path.exists(self.file_name): self.from_dict(json.load(open(self.file_name, 'r')), EXPERIENCE=self.EXPERIENCE, load_style_questions=self.load_style_questions)
+            else: raise FileNotFoundError(f"Execution file not found: {self.file_name}")
+            if ckpt == "new": return
             ts6d = self.METHOD.load(ckpt)
             from ...paths import MEMORY_DIR
             self.QUESTIONS.load_res(os.path.join(MEMORY_DIR(self.EXPERIENCE, self.METHOD), ts6d))
@@ -154,7 +148,7 @@ class Execution:
         with open(self.file_name, 'w') as f:
             json.dump(self.to_dict, f, indent=4)
 
-    def __call__(self):
+    def __call__(self, caching_video=True):
         from ...data.elements import TimeStamp
         from ...method import MEMORY_ROOT#, DumpRespond
         from ...paths import MEMORY_DIR
@@ -172,8 +166,8 @@ class Execution:
             YOG.debug(f"Processing Question ID: {q.QID} at TIME: {q.TIME.seconds_experience}s")
             
             q.respond(METHOD.query(q.query if self.mode == "normal" else q.question))
-            self.QUESTIONS.save_res(os.path.join(MEMORY_DIR(self.EXPERIENCE, self.METHOD), "%06d" % int(METHOD.TIME.seconds_experience)))
+            
+            q.save_res(os.path.join(MEMORY_DIR(self.EXPERIENCE, self.METHOD), "%06d" % int(METHOD.TIME.seconds_experience)), caching_video=caching_video)
+            # self.QUESTIONS.save_res(os.path.join(MEMORY_DIR(self.EXPERIENCE, self.METHOD), "%06d" % int(METHOD.TIME.seconds_experience)))
         
         YOG.info(self.QUESTIONS.short_report(METHOD.TIME))
-        
-        # self.save()

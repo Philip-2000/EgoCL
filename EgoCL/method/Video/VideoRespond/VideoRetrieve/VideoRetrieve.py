@@ -51,6 +51,6 @@ class VideoRetrieve(Retrieve):
         idxs = np.argsort(-sims)[:top_k]
         # results = [{'entry': self._texts[int(idx)], 'score': float(sims[int(idx)])} for idx in idxs]
         results = [ self._texts[int(idx)] for idx in idxs]
-        print("results", results)
+        # print("results", results)
         return results
 
