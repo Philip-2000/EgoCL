@@ -27,6 +27,7 @@ class Experiment:
             En.EXPERIENCE = Experience.load_from_name(experience_name=experience_name)
             En.EXPERIENCE.EGO = self.EGO
             En.OPTIONAL = self.OPTIONAL
+            assert En.mode != "strong" or (not En.OPTIONAL), "Strong mode is not compatible with OPTIONAL questions."
             En.ckpt = self.ckpt
             
             En.METHOD = getattr(__import__("EgoCL.method", fromlist=[method]), method)(En.EXPERIENCE, EXECUTION=En, **self.exp_config.get("METHOD_KWARGS", {}))

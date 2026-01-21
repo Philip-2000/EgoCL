@@ -10,3 +10,7 @@ QUESTION_GENERATOR_PROMPT="You are a question generator which generate a questio
     The question should be specific and related to the details mentioned in the annotations.\
     For example, if the annotations mention an object or an action, you can ask about its characteristics, purpose, or context.\
     For an annotation like 'Person A is holding a red ball', you might give 'What is the color of the ball that Person A is holding? <|answer_separator|> The ball is red."
+
+CHOOSER_PROMPT="You would be provided with a question, an open-ended answer, and several choices.\
+                Your task is to choose the closest option that accurately addresses the question using the provided answer.\
+                Put the option's tag (An UPPER CASE Character) at the beginning of your answer."

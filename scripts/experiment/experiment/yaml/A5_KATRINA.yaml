@@ -1,0 +1,35 @@
+EGO: true
+EXECUTIONS: benches
+EXECUTION_KWARGS:
+  MODEL: Qwen2.5-VL-7B-Instruct:a
+  N: 2
+  SAMPLES: 1
+  mode: normal
+EXPERIENCES:
+- EgoR1Bench_A5_KATRINA
+LOAD_STYLES: FORCE_LOAD
+LOAD_STYLE_QUESTIONS: FORCE_LOAD
+METHODS: VideoMethod
+METHOD_KWARGS:
+  FPS: 4
+  I_Cant_See: false
+  I_Dont_Know: false
+  MODEL: Qwen2.5-VL-7B-Instruct:a
+  TEXT: Qwen3-Ours
+  VideoBufferSize: 1024
+  atom_s: 30
+  num_segments: 30
+  strategy:
+    clip:
+      summarize: Concat
+    memory:
+      adjust: None
+      split: None
+    segment:
+      adjust: None
+      split: Force
+      summarize: Empty
+  width: 540
+OPTIONAL: true
+ckpt: new
+name: experiment

@@ -1,0 +1,22 @@
+
+
+import yaml, argparse, os
+def parse_args():
+    parser = argparse.ArgumentParser(description="Create a new configuration file based on the provided model name and its replicas.")
+    parser.add_argument("--METHODS", type=str, help="The output YAML file to write the configuration to.")
+    parser.add_argument("--MODEL", type=str, help="The name of the model for which to create the configuration.")
+    parser.add_argument("--BASE_FILE", type=str, help="The name of the model for which to create the configuration.")
+    parser.add_argument("--RESULT_FILE", type=str, help="The name of the model for which to create the configuration.")
+    return parser.parse_args()
+
+args = parse_args()
+with open(args.BASE_FILE, "r") as f:
+    base_config = yaml.safe_load(f)
+
+base_config["METHODS"] = args.METHODS
+base_config["EXECUTION_KWARGS"]["MODEL"] = args.MODEL
+base_config["METHOD_KWARGS"]["MODEL"] = args.MODEL
+
+os.makedirs(os.path.dirname(args.RESULT_FILE), exist_ok=True)
+with open(args.RESULT_FILE, "w") as f:
+    yaml.safe_dump(base_config, f)

@@ -63,12 +63,20 @@ class VideoMemClip:
         return f"\t\t<VideoMemClip: {len(self)} atoms, from {self.TIMESPAN.STARTSTAMP.seconds_experience}s to {self.TIMESPAN.ENDSTAMP.seconds_experience}s>\n" + "\n".join([atom.__repr__() for atom in self.VIDEO_MEM_ATOMS])
 
     @property
+    def EXPERIENCE(self):
+        return self.MEMORY.EXPERIENCE
+
+    @property
     def MEMORY(self):
         return self.SEGMENT.MEMORY
 
     @property
     def METHOD(self):
         return self.SEGMENT.METHOD
+
+    @property
+    def strategy(self):
+        return self.MEMORY.MEMORIZER.strategy["clip"]
     
     @property
     def MODEL(self):
@@ -77,6 +85,9 @@ class VideoMemClip:
     def call(self, *args, **kwargs):
         return self.SEGMENT.call(*args, **kwargs)
     
+    def tall(self, *args, **kwargs):
+        return self.SEGMENT.tall(*args, **kwargs)
+
     @property
     def TIMESPAN(self): #in such TIMESPAN, only seconds_experience is allowed, because Memory is only related to Experience time and it cannot see the video time or activity information
         TIMESPAN = TimeSpan(TimeStamp(), TimeStamp())
@@ -120,15 +131,23 @@ class VideoMemClip:
         atom.CLIP = self
 
     def summarize(self):
-        self.meta["summary"] = self.VIDEO_MEM_ATOMS[-1].data #FIXME: Shortcutting atom manipulation among and in clips
-        return #FIXME: Shortcutting atom manipulation among and in clips
-        if not self.EXPERIENCE.EGO:
-            from ... import SUMMARIZE_CLIP_PROMPT_SIMPLE as SUMMARIZE_CLIP_PROMPT
+        # self.meta["summary"] = self.VIDEO_MEM_ATOMS[-1].data #FIXME: Shortcutting atom manipulation among and in clips
+        # return #FIXME: Shortcutting atom manipulation among and in clips
+        if self.strategy.get("summarize") == "Concat":
+            self.meta["summary"] = "\n".join([atom.data for atom in self.VIDEO_MEM_ATOMS])
+        elif self.strategy.get("summarize") == "Summary":
+            if not self.EXPERIENCE.EGO:
+                from ... import SUMMARIZE_CLIP_PROMPT_SIMPLE as SUMMARIZE_CLIP_PROMPT
+            else:
+                from ... import SUMMARIZE_CLIP_PROMPT
+            SYSTEM_PROMPT, USER_PROMPT = SUMMARIZE_CLIP_PROMPT(self)
+            # print(f"Summarizing clip with prompt: {PROMPT}")
+            self.meta["summary"] = self.tall({"content": [{"system":SYSTEM_PROMPT},{"user":USER_PROMPT}]})
+            print(self.meta["summary"])
+        elif self.strategy.get("summarize") == "Empty":
+            self.meta["summary"] = ""
         else:
-            from ... import SUMMARIZE_CLIP_PROMPT
-        PROMPT = SUMMARIZE_CLIP_PROMPT(self)
-        # print(f"Summarizing clip with prompt: {PROMPT}")
-        self.meta["summary"] = self.call({"content": [{"text":PROMPT}]})
+            raise ValueError(f"Unknown summarize strategy: {self.strategy.get('summarize')}")
         #self.data += "\n" + self.VIDEO_MEM_ATOMS[-1].data
         #self.meta["description"] = f"VideoMemClip from {self.TIMESPAN.STARTSTAMP.seconds_experience} to {self.TIMESPAN.ENDSTAMP.seconds_experience}, containing {len(self.VIDEO_MEM_ATOMS)} atoms."
         #FIXME: such meta["description"] should be a LLM generated summary of the clip content, but for now we just put a simple description here.
@@ -177,6 +196,9 @@ class VideoMemSegment:
     
     def call(self, *args, **kwargs):
         return self.MEMORY.call(*args, **kwargs)
+
+    def tall(self, *args, **kwargs):
+        return self.MEMORY.tall(*args, **kwargs)
 
     @property
     def TIMESPAN(self):
@@ -231,8 +253,8 @@ class VideoMemSegment:
         #(1.1) 需要考虑这个clip中的atom配置是否合理，就是首先是否需要和上一个clip调整atom的切割位置（segment.adjust）
         if len(self.VIDEO_MEM_CLIPS) == 1: return []
         from ... import SEGMENT_ADJUST_CLIP_PROMPT
-        PROMPT = SEGMENT_ADJUST_CLIP_PROMPT(self.VIDEO_MEM_CLIPS[-2], self.VIDEO_MEM_CLIPS[-1])
-        advice = self.call({"content": [{"text":PROMPT}]})
+        SYSTEM_PROMPT, USER_PROMPT = SEGMENT_ADJUST_CLIP_PROMPT(self.VIDEO_MEM_CLIPS[-2], self.VIDEO_MEM_CLIPS[-1])
+        advice = self.tall({"content": [{"system":SYSTEM_PROMPT},{"user":USER_PROMPT}]})
         import re
         adjustment_match = re.search(r"<adjust>(-?\d+)</adjust>", advice)
         if adjustment_match:
@@ -259,8 +281,8 @@ class VideoMemSegment:
         #(1.2) 其次是当前这个clip中的atom们是否需要切成两份，后面一份形成新的clip（segment.separate）
         CLIP = self.VIDEO_MEM_CLIPS[-1]
         from ... import SEGMENT_SEPARATE_CLIP_PROMPT
-        PROMPT = SEGMENT_SEPARATE_CLIP_PROMPT(CLIP)
-        advice = self.call({"content": [{"text":PROMPT}]})
+        SYSTEM_PROMPT, USER_PROMPT = SEGMENT_SEPARATE_CLIP_PROMPT(CLIP)
+        advice = self.tall({"content": [{"system":SYSTEM_PROMPT},{"user":USER_PROMPT}]})
         import re
         separate_match = re.search(r"<separate>(\d+|X)</separate>", advice)
         clip_id_sets, separate_index = [], None
@@ -292,13 +314,20 @@ class VideoMemSegment:
     
 
     def summarize(self):
-        if not self.EXPERIENCE.EGO:
-            from ... import SUMMARIZE_SEGMENT_PROMPT_SIMPLE as SUMMARIZE_SEGMENT_PROMPT
+        if self.strategy.get("summarize") == "Concat":
+            self.meta["summary"] = "\n".join([clip.meta.get("summary","") for clip in self.VIDEO_MEM_CLIPS])
+        elif self.strategy.get("summarize") == "Summary":
+            if not self.EXPERIENCE.EGO:
+                from ... import SUMMARIZE_SEGMENT_PROMPT_SIMPLE as SUMMARIZE_SEGMENT_PROMPT
+            else:
+                from ... import SUMMARIZE_SEGMENT_PROMPT
+            SYSTEM_PROMPT, USER_PROMPT = SUMMARIZE_SEGMENT_PROMPT(self)
+            # print(f"Summarizing segment with prompt: {PROMPT}")
+            self.meta["summary"] = self.tall({"content": [{"system":SYSTEM_PROMPT},{"user":USER_PROMPT}]})
+        elif self.strategy.get("summarize") == "Empty":
+            self.meta["summary"] = ""
         else:
-            from ... import SUMMARIZE_SEGMENT_PROMPT
-        PROMPT = SUMMARIZE_SEGMENT_PROMPT(self)
-        # print(f"Summarizing segment with prompt: {PROMPT}")
-        self.meta["summary"] = self.call({"content": [{"text":PROMPT}]})
+            raise ValueError(f"Unknown summarize strategy: {self.strategy.get('summarize')}")
 
     def organize(self):
         clip_id_set, clip_id_sets = [], []
@@ -366,6 +395,9 @@ class VideoMemory(Memory):
     
     def call(self, *args, **kwargs):
         return self.MEMORIZER.call(*args, **kwargs)
+
+    def tall(self, *args, **kwargs):
+        return self.MEMORIZER.tall(*args, **kwargs)
     
     @property
     def to_dict(self):
@@ -402,7 +434,7 @@ class VideoMemory(Memory):
         os.makedirs(os.path.dirname(path), exist_ok=True)
         import json
         with open(path, 'w') as f:
-            json.dump(self.to_dict, f)
+            json.dump(self.to_dict, f, ensure_ascii=False, indent=4)
 
     def from_dict(self, dict_data):
         self.TIME.from_dict(dict_data['TIME'], None, None)
@@ -460,8 +492,8 @@ class VideoMemory(Memory):
         if len(self.VIDEO_MEM_SEGMENTS) == 1: return []
         #(2.1) 需要考虑这个segment中的clip配置是否合理，就是首先是否需要和上一个segment调整clip的切割位置（memory.adjust）
         from ... import MEMORY_ADJUST_SEGMENT_PROMPT
-        PROMPT = MEMORY_ADJUST_SEGMENT_PROMPT(self.VIDEO_MEM_SEGMENTS[-2], self.VIDEO_MEM_SEGMENTS[-1])
-        advice = self.call({"content": [{"text":PROMPT}]})
+        SYSTEM_PROMPT, USER_PROMPT = MEMORY_ADJUST_SEGMENT_PROMPT(self.VIDEO_MEM_SEGMENTS[-2], self.VIDEO_MEM_SEGMENTS[-1])
+        advice = self.tall({"content": [{"system":SYSTEM_PROMPT},{"user":USER_PROMPT}]})
         import re
         adjustment_match = re.search(r"<adjust>(-?\d+)</adjust>", advice)
         if adjustment_match:
@@ -497,8 +529,8 @@ class VideoMemory(Memory):
         #(2.2) 其次是当前这个segment中的clip们是否需要切成两份，后面一份形成新的segment（memory.separate）
         from ... import MEMORY_SEPARATE_SEGMENT_PROMPT
         SEGMENT = self.VIDEO_MEM_SEGMENTS[-1]
-        PROMPT = MEMORY_SEPARATE_SEGMENT_PROMPT(SEGMENT)
-        advice = self.call({"content": [{"text":PROMPT}]})
+        SYSTEM_PROMPT, USER_PROMPT = MEMORY_SEPARATE_SEGMENT_PROMPT(SEGMENT)
+        advice = self.tall({"content": [{"system":SYSTEM_PROMPT},{"user":USER_PROMPT}]})
         import re
         separation_match = re.search(r"<separate>(\d+)</separate>", advice)
         if separation_match:

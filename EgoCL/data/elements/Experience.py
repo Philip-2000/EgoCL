@@ -210,56 +210,14 @@ class Experience:
                         else:
                             ts_end = vid.TIMESPAN.STARTSTAMP.template(end_s)
                             current_s = end_s
-                        TIMESTAMPS.append(ts_end)
-        
-        return TIMESTAMPS
-
-        for act_id, act in enumerate(self.ACTIVITIES):
-            if act.TIMESPAN.STARTSTAMP.seconds_experience <= current_s < act.TIMESPAN.ENDSTAMP.seconds_experience:
-                ts_current = TimeStamp()
-                ts_current.EXPERIENCE = self
-                ts_current.seconds_experience = current_s
-
-                ts_current.ACTIVITY = act
-                ts_current.seconds_activity = current_s - act.TIMESPAN.STARTSTAMP.seconds_experience
-
-                ts_current.VIDEO = act.VIDEO
-                ts_current.seconds_video = act.VIDEO.start_s + (current_s - act.TIMESPAN.STARTSTAMP.seconds_experience)  #FIXME: MAYBE WRONG IF MULTI-VIDEO ACTIVITY
-                TIMESTAMPS.append(ts_current)
-                current_s = act.TIMESPAN.ENDSTAMP.seconds_experience + 0.1  # move to next moment
-                if current_s >= end_s:
-                    ts_current = TimeStamp()
-                    ts_current.EXPERIENCE = self
-                    ts_current.seconds_experience = end_s
-                    ts_current.ACTIVITY = act
-                    ts_current.seconds_activity = end_s - act.TIMESPAN.STARTSTAMP.seconds_experience
-                    ts_current.VIDEO = act.VIDEO
-                    ts_current.seconds_video = act.VIDEO.start_s + (end_s - act.TIMESPAN.STARTSTAMP.seconds_experience)
-                    TIMESTAMPS.append(ts_current)
-                    break
-                else:
-                    ts_current = TimeStamp()
-                    ts_current.EXPERIENCE = self
-                    ts_current.seconds_experience = act.TIMESPAN.ENDSTAMP.seconds_experience
-                    ts_current.ACTIVITY = act
-                    ts_current.seconds_activity = act.TIMESPAN.ENDSTAMP.seconds_experience - act.TIMESPAN.STARTSTAMP.seconds_experience
-                    ts_current.VIDEO = act.VIDEO
-                    ts_current.seconds_video = act.VIDEO.start_s + (act.TIMESPAN.ENDSTAMP.seconds_experience - act.TIMESPAN.STARTSTAMP.seconds_experience)
-                    TIMESTAMPS.append(ts_current)
-                    if act_id + 1 < len(self.ACTIVITIES):
-                        ts_current = TimeStamp()
-                        ts_current.EXPERIENCE = self
-                        act_1 = self.ACTIVITIES[act_id + 1]
-                        ts_current.seconds_experience = act_1.TIMESPAN.STARTSTAMP.seconds_experience
-                        ts_current.ACTIVITY = act_1
-                        ts_current.seconds_activity = 0.0
-                        ts_current.VIDEO = act_1.VIDEO
-                        ts_current.seconds_video = act_1.VIDEO.start_s
-                        TIMESTAMPS.append(ts_current)
+                        TIMESTAMPS.append(ts_end)        
         return TIMESTAMPS
     
-    def time_to_video(self, start_s: float, end_s: float) -> Optional[float]:
+    def time_to_video(self, start_s: float, end_s: float):
         TIMESTAMPS = self.time_to_timestamps(start_s, end_s)
+        return self.timestamps_to_video(TIMESTAMPS)
+
+    def timestamps_to_video(self, TIMESTAMPS):
         from . import YOG
         # YOG.debug("\n".join([t.__repr__() for t in TIMESTAMPS]), "TIMESTAMPS in time_to_video")
         if len(TIMESTAMPS) < 2:
@@ -286,14 +244,14 @@ class Experience:
                 # adjust subtitle times to be relative to the clip start
                 for sub in clip_subs:
                     sub_start_seconds_origin = sub.start.hours * 3600 + sub.start.minutes * 60 + sub.start.seconds + sub.start.milliseconds / 1000.0
-                    sub_start_seconds_real = sub_start_seconds_origin - video_start_s + (ts_start.seconds_experience - _0_experience_start_s)
+                    sub_start_seconds_real = sub_start_seconds_origin - ts_start.seconds_video + (ts_start.seconds_experience - _0_experience_start_s)
                     sub.start.hours = int(sub_start_seconds_real // 3600)
                     sub.start.minutes = int((sub_start_seconds_real % 3600) // 60)
                     sub.start.seconds = int(sub_start_seconds_real % 60)
                     sub.start.milliseconds = int((sub_start_seconds_real - int(sub_start_seconds_real)) * 1000)
                     
                     sub_end_seconds_origin = sub.end.hours * 3600 + sub.end.minutes * 60 + sub.end.seconds + sub.end.milliseconds / 1000.0
-                    sub_end_seconds_real = sub_end_seconds_origin - video_start_s + (ts_start.seconds_experience - _0_experience_start_s)
+                    sub_end_seconds_real = sub_end_seconds_origin - ts_start.seconds_video + (ts_start.seconds_experience - _0_experience_start_s)
                     sub.end.hours = int(sub_end_seconds_real // 3600)
                     sub.end.minutes = int((sub_end_seconds_real % 3600) // 60)
                     sub.end.seconds = int(sub_end_seconds_real % 60)

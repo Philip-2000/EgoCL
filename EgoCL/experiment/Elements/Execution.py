@@ -42,6 +42,7 @@ class Execution:
         self.load_style_questions = load_style_questions
         self.load_style_respond = load_style_respond
         self.ckpt = kwargs.get("ckpt", "latest") #("new", "%06d", "latest")
+        self.mode = kwargs.get("mode", "normal") #"normal", "strong"
         self.N = N
         self.SAMPLES = SAMPLES
         self.METHOD = None
@@ -165,11 +166,14 @@ class Execution:
 
             if METHOD.TIME.seconds_experience < q.TIME.seconds_experience - 1e-1:
                 YOG.info(self.QUESTIONS.short_report(METHOD.TIME))
+                YOG.debug("Progressing METHOD TIME from %.2f to %.2f" % (METHOD.TIME.seconds_experience, q.TIME.seconds_experience))
                 METHOD.progress(start_s=METHOD.TIME.seconds_experience, end_s=q.TIME.seconds_experience)
+
+            YOG.debug(f"Processing Question ID: {q.QID} at TIME: {q.TIME.seconds_experience}s")
             
-            q.respond(METHOD.query(q.query))
+            q.respond(METHOD.query(q.query if self.mode == "normal" else q.question))
             self.QUESTIONS.save_res(os.path.join(MEMORY_DIR(self.EXPERIENCE, self.METHOD), "%06d" % int(METHOD.TIME.seconds_experience)))
         
         YOG.info(self.QUESTIONS.short_report(METHOD.TIME))
         
-        self.save()
+        # self.save()

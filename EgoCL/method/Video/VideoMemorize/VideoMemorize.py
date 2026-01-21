@@ -13,24 +13,26 @@ class VideoMemorize(Memorize):
         self.VideoBufferSize = kwargs.get("VideoBufferSize", 1024)
         self.VideoBufferState= 0
         self.MODEL = kwargs.get("MODEL", "Qwen3-VL-8B-Instruct") 
+        self.TEXT = kwargs.get("TEXT", "Qwen3-Ours")
         self.width = kwargs.get("width", 1080)         #resize width for video understanding
         self.FPS = kwargs.get("FPS", 2)  #frame rate when we concatenate these frames into a NEW video, ONLY for video understanding model calls, such video's framerate is usually high, much higher than original video, in order to save space
         self.I_Cant_See = kwargs.get("I_Cant_See", True) #False) #
 
         
         self.strategy = {
+            "clip": {
+                "summarize": kwargs.get("strategy",{}).get("clip", {}).get("summarize", "Summary"),
+            },
             "segment": {
                 "adjust": kwargs.get("strategy",{}).get("segment", {}).get("adjust", "None"),
                 "split": kwargs.get("strategy",{}).get("segment", {}).get("split", "Force"),
+                "summarize": kwargs.get("strategy",{}).get("segment", {}).get("summarize", "Summary"),
             },
             "memory": {
                 "adjust": kwargs.get("strategy",{}).get("memory", {}).get("adjust", "None"),
                 "split": kwargs.get("strategy",{}).get("memory", {}).get("split", "None"),
             }
         }
-        #策略是两方面，顶层方面是：第一这个站在Memory的角度之下，是否需要调节各个Segment中的Clip的划分位置；第二这个站在Memory的角度之下，是否需要将最后一个Segment划分成两个Segment
-        #底层方面是：第一这个站在Segment的角度之下，是否需要调节各个Clip中的Atom的划分位置；第二这个站在Segment的角度之下，是否需要将最后一个Clip划分成两个Clip
-
 
     @property
     def atom_s(self):
@@ -76,12 +78,15 @@ class VideoMemorize(Memorize):
             {"video": kwargs.get("video_cache_path", "")},
         ]
 
-    def __cache_video(self, clip, start_s, end_s):
+    def __cache_video(self, clip, start_s, end_s, force_create=False):
         import os
         from ... import CACHE_DIR
         os.makedirs(CACHE_DIR, exist_ok=True)
         video_cache_path = os.path.join(CACHE_DIR, f"{self.EXPERIENCE.name}_{self.name}_{int(start_s)}_{int(end_s)}_cache={self.VideoBufferState}.mp4")
         search = [f for f in os.listdir(CACHE_DIR) if f.startswith(f"{self.EXPERIENCE.name}_{self.name}_") and f.endswith(f"_cache={self.VideoBufferState}.mp4")]
+        if not force_create and os.path.exists(video_cache_path):
+            YOG.info(f"Using cached video at {video_cache_path}", tag="Video Caching")
+            return video_cache_path
         if len(search) > 0: #remove such cache file first
             os.remove(os.path.join(CACHE_DIR, search[0]))
         
@@ -102,14 +107,14 @@ class VideoMemorize(Memorize):
         YOG.debug(f"Video cached at {video_cache_path}", tag="Video Caching")
         self.VideoBufferState = (self.VideoBufferState + 1) % self.VideoBufferSize
         return video_cache_path
-
-    def humanize_time(self, seconds):
-        import time
-        return time.strftime("%H:%M:%S", time.gmtime(seconds))
     
     def call(self, *args, **kwargs):
         from MyLm import call
         return call(self.MODEL, *args, **kwargs)
+
+    def tall(self, *args, **kwargs): #text call, when you sure that this calling contains no video or image input, so that we can use a pure text model ( which is larger and faster ) to process it
+        from MyLm import call
+        return call(self.TEXT, *args, **kwargs)
     
     def load(self, ckpt):
         return self.MEMORY.load(ckpt)
@@ -136,40 +141,59 @@ class VideoMemorize(Memorize):
         time_str = time.strftime("%H:%M:%S", time.gmtime(remainder))
         return f"Day{int(days)+1}_{time_str}"
 
-    def __call__(self, start_s, end_s):
+    def prepare_video_file(self, start_s, end_s):        
+
         TIMESTAMPS = self.EXPERIENCE.time_to_timestamps(start_s, end_s)
         STARTSTAMP = TIMESTAMPS[0]
         START_NATURAL = self.natural_string(STARTSTAMP.seconds_natural)
 
-
-        clip, transcripts = self.EXPERIENCE.time_to_video(start_s, end_s)
+        clip, transcripts = self.EXPERIENCE.timestamps_to_video(TIMESTAMPS)
         transcripts = self.transform_transcripts(transcripts)
         
         #if clip is None: return
         end_s = min(end_s, start_s + clip.duration)  #just in case that the clip is shorter
         video_cache_path = self.__cache_video(clip, start_s, start_s + clip.duration)
+        return video_cache_path, clip, transcripts, START_NATURAL
+
+    def __call__(self, start_s, end_s):
         import time
-        timer_start = time.time()
+        time_log = {"clipping": 0, "summarization": 0, "organization": 0}
+
+        start_clipping = time.time()
+        # TIMESTAMPS = self.EXPERIENCE.time_to_timestamps(start_s, end_s)
+        # STARTSTAMP = TIMESTAMPS[0]
+        # START_NATURAL = self.natural_string(STARTSTAMP.seconds_natural)
+
+
+        # clip, transcripts = self.EXPERIENCE.time_to_video(start_s, end_s)
+        # transcripts = self.transform_transcripts(transcripts)
+        
+        #if clip is None: return
+        # end_s = min(end_s, start_s + clip.duration)  #just in case that the clip is shorter
+        # video_cache_path = self.__cache_video(clip, start_s, start_s + clip.duration)
+        
+        video_cache_path, clip, transcripts, START_NATURAL = self.prepare_video_file(start_s, end_s)
+        end_clipping = time.time()
+        time_log["clipping"] = round(end_clipping - start_clipping, 4)
+        
+        
         if self.I_Cant_See:
             summary = "fake response"
         else:
+            start_summarization = time.time()
             summary = self.call({"content": self.content(video_cache_path=video_cache_path, transcripts=transcripts), "num_segments": self.num_segments})
+            end_summarization = time.time()
+            time_log["summarization"] = round(end_summarization - start_summarization, 4)
             YOG.debug(("Time at", start_s, "to", end_s, "num_segments=", self.num_segments, "VideoMemorize summary:", summary), tag="VideoMemorize")
-            one_time = time.time() - timer_start
-            remain_time = one_time * (self.EXPERIENCE.duration_s - end_s) / (end_s - start_s)
-            remain_time_humanized = self.humanize_time(remain_time)
-            YOG.info(("Time at", start_s, "to", end_s, #"cached at ", video_cache_path,
-                "Time cost for VideoMemorize model call:", round(one_time, 3),
-                "seconds, estimated remain time:", remain_time_humanized, 
-                "ratio than the video:", round(remain_time / (self.EXPERIENCE.duration_s - end_s), 2)), tag="VideoMemorize")
-            timer_start = time.time()
         
+        start_organization = time.time()
         metaa = {
             "start_natural": START_NATURAL,
             #"video_cache_path": video_cache_path,
         }
         if transcripts is not None and len(transcripts) > 0: metaa["transcripts"] = transcripts
         self.MEMORY(clip, self.__s2timespan(start_s, end_s), summary, meta=metaa)
+        end_organization = time.time()
+        time_log["organization"] = round(end_organization - start_organization,3)
 
-        #MEMORIZE方法用于处理信息，例如调用模型进行总结
-        #MEMORY用于存储处理后的信息
+        return time_log
