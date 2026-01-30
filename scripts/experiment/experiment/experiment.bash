@@ -1,1 +1,1 @@
-python $(dirname "${BASH_SOURCE[0]}")/experiment.py
+python $(dirname "${BASH_SOURCE[0]}")/experiment.py -e EgoLifeQA_J

@@ -14,6 +14,7 @@ class Experience:
         import time
         self.name = kwargs.get('name', f"Unnamed_{time.strftime('%m%d_%H_%M_%S', time.localtime())}")
         self.start_s = float(start_s)
+        self.EGO = kwargs.get('EGO', True)
         durations = kwargs.get('durations', [])
         durations = durations + [None] * (len(self.ACTIVITIES) - len(durations))
         self.schedules(durations)
@@ -61,6 +62,7 @@ class Experience:
     def to_dict(self):
         return {
             'name': self.name,
+            'EGO': self.EGO,
             'start_s': self.start_s,
             'duration_s': self.duration_s,
             'activities': [a.to_dict for a in self.ACTIVITIES]
@@ -85,7 +87,7 @@ class Experience:
             a.TIMESPAN.from_dict(ad.get('TIMESPAN', {}), a.VIDEOS, a, None)
             acts.append(a)
         # construct Experience without re-computing timeline if timeline provided
-        exp = cls(activities=[], start_s=data.get('start_s', 0.0), name=data.get('name', 'Unnamed'))
+        exp = cls(activities=[], start_s=data.get('start_s', 0.0), name=data.get('name', 'Unnamed'), EGO=data.get('EGO', True))
         exp.ACTIVITIES = Activities(acts)
         return exp
 
@@ -217,7 +219,7 @@ class Experience:
         TIMESTAMPS = self.time_to_timestamps(start_s, end_s)
         return self.timestamps_to_video(TIMESTAMPS)
 
-    def timestamps_to_video(self, TIMESTAMPS):
+    def timestamps_to_video(self, TIMESTAMPS, get_video=True, get_transcripts=True):
         from . import YOG
         # YOG.debug("\n".join([t.__repr__() for t in TIMESTAMPS]), "TIMESTAMPS in time_to_video")
         if len(TIMESTAMPS) < 2:
@@ -230,14 +232,13 @@ class Experience:
             ts_start = TIMESTAMPS[i]
             ts_end = TIMESTAMPS[i + 1]
             video = ts_start.VIDEO
-            if video.path is None or not os.path.exists(video.path):
-                continue
-            clip = moviepy.VideoFileClip(video.path)
-            video_start_s = video.TIMESPAN.STARTSTAMP.seconds_video
-            clip = clip.subclipped(ts_start.seconds_video - video_start_s, min(ts_end.seconds_video - video_start_s, clip.duration-0.01))
-            video_clips.append(clip)
+            if video.path is not None and os.path.exists(video.path) and get_video:
+                clip = moviepy.VideoFileClip(video.path)
+                video_start_s = video.TIMESPAN.STARTSTAMP.seconds_video
+                clip = clip.subclipped(ts_start.seconds_video - video_start_s, min(ts_end.seconds_video - video_start_s, clip.duration-0.01))
+                video_clips.append(clip)
 
-            if video.transcript_path and os.path.exists(video.transcript_path):
+            if video.transcript_path and os.path.exists(video.transcript_path) and get_transcripts:
                 import pysrt
                 subs = pysrt.open(video.transcript_path)
                 clip_subs = subs.slice(starts_after={'seconds': ts_start.seconds_video}, ends_before={'seconds': ts_end.seconds_video})
@@ -262,10 +263,10 @@ class Experience:
         if not video_clips:
             return None, []
         if len(video_clips) == 1:
-            return video_clips[0], transcripts
+            return video_clips[0] if get_video else None, transcripts if get_transcripts else []
             
         final_clip = moviepy.concatenate_videoclips(video_clips)
-        return final_clip, transcripts
+        return final_clip if get_video else None, transcripts if get_transcripts else []
 
 class Experiences:
     """Container for multiple Experience objects"""

@@ -21,6 +21,10 @@ class Question:
     @property
     def OPTIONAL(self):
         return self.QUESTIONS.OPTIONAL
+    
+    @property
+    def EXPERIMENT(self):
+        return self.QUESTIONS.EXPERIMENT
 
     @property
     def METHOD(self):
@@ -66,26 +70,27 @@ class Question:
             'open_ended': (self.open_ended.res_dict if hasattr(self.open_ended, "res_dict") else str(self.open_ended)) if getattr(self, 'open_ended', None) is not None else None,
         }
     
-    def save_res(self, dir, caching_video=True):
-        import os, json
-        os.makedirs(dir, exist_ok=True)
-        cache_dir = os.path.join(dir, "..", "RefVideos")
-        os.makedirs(cache_dir, exist_ok=True)
-        file_path = os.path.join(dir, "results.json")
-        if os.path.exists(file_path):
-            json_data = json.load(open(file_path, 'r'))
-            json_data = [q for q in json_data if q['uid'] != self.QID] + [self.res_dict(CACHE_DIR=cache_dir, caching_video=caching_video)]
-            with open(file_path, 'w') as f:
-                json.dump(json_data, f, indent=4, ensure_ascii=False)
-        else:
-            with open(file_path, 'w') as f:
-                json.dump([self.res_dict(CACHE_DIR=cache_dir, caching_video=caching_video)], f, indent=4, ensure_ascii=False)
+    # def save_res(self, dir, caching_video=True):
+    #     YOG.info(f"Saving result for Question ID: {self.QID} at {dir}", tag="Question Save Result")
+    #     import os, json
+    #     os.makedirs(dir, exist_ok=True)
+    #     cache_dir = os.path.join(dir, "..", "RefVideos")
+    #     os.makedirs(cache_dir, exist_ok=True)
+    #     file_path = os.path.join(dir, "results.json")
+    #     if os.path.exists(file_path):
+    #         json_data = json.load(open(file_path, 'r'))
+    #         json_data = [q for q in json_data if q['uid'] != self.QID] + [self.res_dict(CACHE_DIR=cache_dir, caching_video=caching_video)]
+    #         with open(file_path, 'w') as f:
+    #             json.dump(json_data, f, indent=4, ensure_ascii=False)
+    #     else:
+    #         with open(file_path, 'w') as f:
+    #             json.dump([self.res_dict(CACHE_DIR=cache_dir, caching_video=caching_video)], f, indent=4, ensure_ascii=False)
     
 
     def save_res(self, CACHE_DIR, caching_video=True):
         import os, json
         os.makedirs(CACHE_DIR, exist_ok=True)
-        file_path = os.path.join(CACHE_DIR, f"{self.EXPERIENCE.name}_{self.QID}_result.json")
+        file_path = os.path.join(CACHE_DIR, f"{self.EXPERIMENT.name}_{self.QID}_result.json")
         with open(file_path, 'w') as f:
             json.dump(self.res_dict(CACHE_DIR, caching_video=caching_video), f, indent=4, ensure_ascii=False)
 
@@ -188,8 +193,7 @@ class Questions:
     
     def get_question_by_QID(self, QID):
         for q in self.QUESTIONS:
-            if q.QID == QID:
-                return q
+            if q.QID == QID: return q
         return None
     
     def sort_by_time(self):
@@ -207,6 +211,10 @@ class Questions:
     @property
     def EXPERIENCE(self):
         return self.EXECUTION.EXPERIENCE
+    
+    @property
+    def EXPERIMENT(self):
+        return self.EXECUTION.EXPERIMENT
 
     @property
     def OPTIONAL(self):
@@ -228,6 +236,7 @@ class Questions:
         return [q.to_dict for q in self.QUESTIONS]
 
     def save_res(self, dir, caching_video=True):
+        raise AssertionError("Saving all question results in one file is deprecated. Please use each Question's save_res method instead.")
         import os, json
         os.makedirs(dir, exist_ok=True)
         cache_dir = os.path.join(dir, "..", "RefVideos")

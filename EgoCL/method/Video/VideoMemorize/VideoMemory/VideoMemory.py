@@ -20,6 +20,17 @@ class VideoMemAtom:
     @property
     def MEMORY(self):
         return self.CLIP.MEMORY
+    
+    @property
+    def EXPERIENCE(self):
+        return self.CLIP.EXPERIENCE
+    
+    @property
+    def ENCODER(self):
+        return self.CLIP.ENCODER
+    
+    def encode(self, s):
+        return self.CLIP.encode(s)
 
     @property
     def METHOD(self):
@@ -46,11 +57,6 @@ class VideoMemAtom:
     
 class VideoMemClip:    
     def __init__(self, SEGMENT):
-        #就是说这个东西，这个Atom如果在非常非常短的时候，理论上说我们认为应该是这个什么呀，应该是没有意义的，
-        #但是现在它这个Atom做不到特别特别短，
-        #但是从我们的设计理念上来说，Atom好像就是应该是没有意义的对吧？
-        #那要不然就是说，在Atom不是特别特别短的话，一个Clip中只有一个Atom得了，怎么样，行
-        #那先暂时就是说什么呢？
         self.meta = {}
         self.data = ""
         self.VIDEO_MEM_ATOMS = []
@@ -69,6 +75,17 @@ class VideoMemClip:
     @property
     def MEMORY(self):
         return self.SEGMENT.MEMORY
+
+    @property
+    def EXPERIMENT(self):
+        return self.SEGMENT.EXPERIMENT
+    
+    @property
+    def ENCODER(self):
+        return self.SEGMENT.ENCODER
+
+    def encode(self, s):
+        return self.SEGMENT.encode(s)
 
     @property
     def METHOD(self):
@@ -156,6 +173,9 @@ class VideoMemClip:
     @property
     def structure(self):
         return f"({len(self)})"
+    
+    def __getitem__(self, index):
+        return self.VIDEO_MEM_ATOMS[index] if isinstance(index, int) else self.VIDEO_MEM_ATOMS[index[0]]
 
 
 class VideoMemSegment:
@@ -185,6 +205,17 @@ class VideoMemSegment:
     @property
     def EXPERIENCE(self):
         return self.MEMORY.EXPERIENCE
+    
+    @property
+    def EXPERIMENT(self):
+        return self.MEMORY.EXPERIMENT
+
+    @property
+    def ENCODER(self):
+        return self.MEMORY.ENCODER
+    
+    def encode(self, s):
+        return self.MEMORY.encode(s)
 
     @property
     def METHOD(self):
@@ -348,6 +379,10 @@ class VideoMemSegment:
     def structure(self):
         return f"[{len(self)}({self.len_atoms}) : " + " ".join([clip.structure for clip in self.VIDEO_MEM_CLIPS])+ "]"
 
+    def __getitem__(self, index):
+        return self.VIDEO_MEM_CLIPS[index] if isinstance(index, int) else self.VIDEO_MEM_CLIPS[index[0]][index[1:]]
+
+
 class VideoMemory(Memory):
     def __init__(self, MEMORIZER, **kwargs):
         super().__init__()
@@ -362,6 +397,10 @@ class VideoMemory(Memory):
 
         self.atom_s = kwargs.get("atom_s", 844)  ##length in seconds for atom video understanding
         self.num_segments = kwargs.get("num_segments", 30)  #number of frames for atom video understanding
+
+        from .VideoEncode import StringEncodings
+        self.ENCODINGS = StringEncodings(self, **kwargs)
+        self.load_encodes = kwargs.get("load_encodes", False)
 
     def __len__(self):
         return len(self.VIDEO_MEM_SEGMENTS)
@@ -389,6 +428,21 @@ class VideoMemory(Memory):
     def METHOD(self):
         return self.MEMORIZER.METHOD
     
+    @property
+    def SCREEN_SHOT(self):
+        return self.MEMORIZER.SCREEN_SHOT
+    
+    @property
+    def EXPERIMENT(self):
+        return self.MEMORIZER.EXPERIMENT
+    
+    @property
+    def ENCODER(self):
+        return self.MEMORIZER.ENCODER
+    
+    def encode(self, s):
+        return self.MEMORIZER.encode(s)
+
     @property
     def MODEL(self):
         return self.MEMORIZER.MODEL
@@ -430,11 +484,13 @@ class VideoMemory(Memory):
         from .... import MEMORY_ROOT
         import os
         from os.path import join as opj
-        path = opj(MEMORY_ROOT, self.EXPERIENCE.name, self.METHOD.name, f"{int(self.TIME.seconds_experience):06d}", "memory.json")
+        path = opj(MEMORY_ROOT, self.EXPERIENCE.name, self.METHOD.name, f"{int(self.TIME.seconds_experience):06d}", f"{self.EXPERIMENT.name}_memory.json")
         os.makedirs(os.path.dirname(path), exist_ok=True)
         import json
         with open(path, 'w') as f:
             json.dump(self.to_dict, f, ensure_ascii=False, indent=4)
+        
+        if self.load_encodes: self.ENCODINGS.save()
 
     def from_dict(self, dict_data):
         self.TIME.from_dict(dict_data['TIME'], None, None)
@@ -442,7 +498,7 @@ class VideoMemory(Memory):
         self.VIDEO_MEM_SEGMENTS = [VideoMemSegment(self).from_dict(segment_dict) for segment_dict in dict_data['VIDEO_MEM_SEGMENTS']]
         return self
 
-    def load(self, seconds_experience):
+    def load(self, seconds_experience, experiment_name=None):
         from .... import MEMORY_ROOT
         from os.path import join as opj
         if isinstance(seconds_experience, str) and seconds_experience == "latest":
@@ -452,27 +508,52 @@ class VideoMemory(Memory):
                 raise FileNotFoundError(f"Memory path not found: {exp_mem_path}")
             available_times = [int(name) for name in os.listdir(exp_mem_path) if name.isdigit()]
             if len(available_times) == 0:
-                raise FileNotFoundError(f"No memory checkpoints found in: {exp_mem_path}")
+                return None
             seconds_experience = max(available_times)
-        path = opj(MEMORY_ROOT, self.EXPERIENCE.name, self.METHOD.name, f"{int(seconds_experience):06d}", "memory.json")
+        path = opj(MEMORY_ROOT, self.EXPERIENCE.name, self.METHOD.name, f"{int(seconds_experience):06d}", f"{experiment_name if experiment_name is not None else self.EXPERIMENT.name}_memory.json")
         import json
         with open(path, 'r') as f:
             data = json.load(f)
         self.from_dict(data)
+
+        self.ENCODINGS.build()
+        self.ENCODINGS.load("%06d" % int(seconds_experience))
+
         return "%06d" % int(seconds_experience)
 
-    def __call__(self, clip, TIMESPAN, summary, meta=None):
+    def __call__(self, clip, TIMESPAN, summary, meta=None, START_NATURAL=None):
         atom = VideoMemAtom(data=summary, meta=meta if meta is not None else {}, CLIP=None)
         atom.TIMESPAN = TIMESPAN.copy()
         self.TIME.seconds_experience = max(self.TIME.seconds_experience, TIMESPAN.ENDSTAMP.seconds_experience)
         
         atom.meta = meta if meta is not None else {}
-        atom.data = summary
+        if not self.SCREEN_SHOT:
+            atom.data = summary
+        else:    
+            from ... import SCREEN_SHOOTING
+            from .....paths import MEMORY_ROOT
+            from os.path import join as opj
+            import os
+            from PIL import Image
+            images, descriptions, times, summary = SCREEN_SHOOTING(clip, summary, TIMESPAN, START_NATURAL)
+            atom.data = summary
+            images_dir = opj(MEMORY_ROOT, self.EXPERIENCE.name, self.METHOD.name, f"ScreenShots", f"{self.EXPERIMENT.name}")
+            os.makedirs(images_dir, exist_ok=True)
+            atom.meta['screenshots'] = []
+            for i, (img, desc, t) in enumerate(zip(images, descriptions, times)):
+                img_path = opj(images_dir, f"{t}.png")
+                #img is numpy.ndarray
+                Image.fromarray(img).save(img_path)
+                atom.meta['screenshots'].append({'path': img_path, 'description': desc, 'time': t})
+        
 
         #self.MEMORY.append(clip)
         if len(self.VIDEO_MEM_SEGMENTS) == 0: self.VIDEO_MEM_SEGMENTS.append(VideoMemSegment(self))
         self.VIDEO_MEM_SEGMENTS[-1].append_atom(atom)
+        self.ENCODINGS.append_atom(atom)
         self.organize()
+
+
 
     def iterate_atoms(self):
         for segment in self.VIDEO_MEM_SEGMENTS:
@@ -575,3 +656,9 @@ class VideoMemory(Memory):
     @property
     def structure(self):
         return f"{len(self)}[{self.len_clips}({self.len_atoms})] : " + " ".join([seg.structure for seg in self.VIDEO_MEM_SEGMENTS])
+    
+    def __getitem__(self, index):
+        return self.VIDEO_MEM_SEGMENTS[index] if isinstance(index, int) else self.VIDEO_MEM_SEGMENTS[index[0]][index[1:]]
+
+    def get(self,i): #for a dump solution, who only contains one segment of all, and one atom in each clip (such solution actually eliminates the need for segment and clip levels, but keeps them for structure consistency)
+        return self.VIDEO_MEM_SEGMENTS[0][i][0]

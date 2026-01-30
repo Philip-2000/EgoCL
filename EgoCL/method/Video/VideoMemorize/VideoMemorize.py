@@ -18,6 +18,11 @@ class VideoMemorize(Memorize):
         self.FPS = kwargs.get("FPS", 2)  #frame rate when we concatenate these frames into a NEW video, ONLY for video understanding model calls, such video's framerate is usually high, much higher than original video, in order to save space
         self.I_Cant_See = kwargs.get("I_Cant_See", True) #False) #
 
+        self.SCREEN_SHOT = kwargs.get("SCREEN_SHOT", False)
+
+        from functools import partial
+        from .. import MEMORIZE_PROMPT
+        self.MEMORIZE_PROMPT = partial(MEMORIZE_PROMPT, EGO=self.EXPERIENCE.EGO, SCREEN_SHOT=self.SCREEN_SHOT)
         
         self.strategy = {
             "clip": {
@@ -47,6 +52,17 @@ class VideoMemorize(Memorize):
         return self.METHOD.EXPERIENCE
     
     @property
+    def EXPERIMENT(self):
+        return self.METHOD.EXPERIMENT
+
+    @property
+    def ENCODER(self):
+        return self.METHOD.ENCODER
+    
+    def encode(self, s):
+        return self.METHOD.encode(s)
+
+    @property
     def TIME(self):
         return self.MEMORY.TIME
 
@@ -65,16 +81,24 @@ class VideoMemorize(Memorize):
         return TIMESPAN
     
     def content(self, **kwargs):
-        if not self.EXPERIENCE.EGO:
-            from .. import MEMORIZE_PROMPT_SIMPLE as MEMORIZE_PROMPT
-        else:
-            from .. import MEMORIZE_PROMPT
+        if self.I_Cant_See:
+            return [
+                {"system": "Please summarize the following transcript of a video segment."},
+                {"user": "\n".join(kwargs.get("transcripts", []))},
+            ]
+        # if not self.EXPERIENCE.EGO:
+        #     from .. import MEMORIZE_PROMPT_SIMPLE as MEMORIZE_PROMPT
+        # else:
+        #     from .. import MEMORIZE_PROMPT
+        SYSTEM_PROMPT, USER_PROMPT = self.MEMORIZE_PROMPT(self.MEMORY.MEMORY_CONTEXT)
         if "transcripts" in kwargs and len(kwargs["transcripts"]) > 0:
             TRANSCRIPT = "\nHere is the transcript of the following video segment:\n" + "\n".join(kwargs["transcripts"])
         else:     
             TRANSCRIPT = ""
         return [
-            {"text": MEMORIZE_PROMPT(self.MEMORY.MEMORY_CONTEXT) + TRANSCRIPT},
+            # {"text": MEMORIZE_PROMPT(self.MEMORY.MEMORY_CONTEXT) + TRANSCRIPT},
+            {"system": SYSTEM_PROMPT},
+            {"user": USER_PROMPT + TRANSCRIPT},
             {"video": kwargs.get("video_cache_path", "")},
         ]
 
@@ -147,10 +171,11 @@ class VideoMemorize(Memorize):
         STARTSTAMP = TIMESTAMPS[0]
         START_NATURAL = self.natural_string(STARTSTAMP.seconds_natural)
 
-        clip, transcripts = self.EXPERIENCE.timestamps_to_video(TIMESTAMPS)
+        clip, transcripts = self.EXPERIENCE.timestamps_to_video(TIMESTAMPS, get_video=not self.I_Cant_See, get_transcripts=True)
         transcripts = self.transform_transcripts(transcripts)
         
         #if clip is None: return
+        if self.I_Cant_See: return None, None, transcripts, START_NATURAL
         end_s = min(end_s, start_s + clip.duration)  #just in case that the clip is shorter
         video_cache_path = self.__cache_video(clip, start_s, start_s + clip.duration)
         return video_cache_path, clip, transcripts, START_NATURAL
@@ -177,14 +202,14 @@ class VideoMemorize(Memorize):
         time_log["clipping"] = round(end_clipping - start_clipping, 4)
         
         
+        start_summarization = time.time()
         if self.I_Cant_See:
-            summary = "fake response"
+            summary = self.tall({"content": self.content(transcripts=transcripts)})
         else:
-            start_summarization = time.time()
             summary = self.call({"content": self.content(video_cache_path=video_cache_path, transcripts=transcripts), "num_segments": self.num_segments})
-            end_summarization = time.time()
-            time_log["summarization"] = round(end_summarization - start_summarization, 4)
-            YOG.debug(("Time at", start_s, "to", end_s, "num_segments=", self.num_segments, "VideoMemorize summary:", summary), tag="VideoMemorize")
+        end_summarization = time.time()
+        time_log["summarization"] = round(end_summarization - start_summarization, 4)
+        YOG.debug(("Time at", start_s, "to", end_s, "num_segments=", self.num_segments, "VideoMemorize summary:", summary), tag="VideoMemorize")
         
         start_organization = time.time()
         metaa = {
@@ -192,7 +217,7 @@ class VideoMemorize(Memorize):
             #"video_cache_path": video_cache_path,
         }
         if transcripts is not None and len(transcripts) > 0: metaa["transcripts"] = transcripts
-        self.MEMORY(clip, self.__s2timespan(start_s, end_s), summary, meta=metaa)
+        self.MEMORY(clip, self.__s2timespan(start_s, end_s), summary, meta=metaa, START_NATURAL=START_NATURAL)
         end_organization = time.time()
         time_log["organization"] = round(end_organization - start_organization,3)
 

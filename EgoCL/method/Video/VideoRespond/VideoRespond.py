@@ -34,24 +34,27 @@ class VideoRespond(Respond):
         from . import VideoRetrieve
         self.name = "VideoRespond"
         self.METHOD = METHOD
-        OPTIONAL = METHOD.EXECUTION.OPTIONAL if METHOD.EXECUTION is not None else False
-        if OPTIONAL:
-            if not self.EXPERIENCE.EGO:
-                from .. import RESPOND_PROMPT_SIMPLE_OPTIONAL as RESPOND_PROMPT
-            else:
-                from .. import RESPOND_PROMPT_OPTIONAL as RESPOND_PROMPT
-        else:
-            if not self.EXPERIENCE.EGO:
-                from .. import RESPOND_PROMPT_SIMPLE as RESPOND_PROMPT
-            else:
-                from .. import RESPOND_PROMPT as RESPOND_PROMPT
-        YOG.info(("OPTIONAL ", OPTIONAL, " EGO ", self.EXPERIENCE.EGO, " VLM Model ", kwargs.get("MODEL", "Qwen3-VL-8B-Instruct")))
+        self.OPTIONAL = METHOD.EXECUTION.OPTIONAL if METHOD.EXECUTION is not None else False
+        # if OPTIONAL:
+        #     if not self.EXPERIENCE.EGO:
+        #         from .. import RESPOND_PROMPT_SIMPLE_OPTIONAL as RESPOND_PROMPT
+        #     else:
+        #         from .. import RESPOND_PROMPT_OPTIONAL as RESPOND_PROMPT
+        # else:
+        #     if not self.EXPERIENCE.EGO:
+        #         from .. import RESPOND_PROMPT_SIMPLE as RESPOND_PROMPT
+        #     else:
+        #         from .. import RESPOND_PROMPT as RESPOND_PROMPT
+        from functools import partial
+        from .. import RESPOND_PROMPT
+        self.RESPOND_PROMPT = partial(RESPOND_PROMPT, EGO=self.EXPERIENCE.EGO, OPTIONAL=self.OPTIONAL)
+        YOG.info(("OPTIONAL ", self.OPTIONAL, " EGO ", self.EXPERIENCE.EGO, " VLM Model ", kwargs.get("MODEL", "Qwen3-VL-8B-Instruct")))
         
         # from .. import RAG_PROMPT
-        self.RETRIEVE = VideoRetrieve(self)
+        self.RETRIEVE = VideoRetrieve(self, **kwargs)
         self.MODEL = kwargs.get("MODEL", "Qwen3-VL-8B-Instruct")
         self.TEXT = kwargs.get("TEXT", "Qwen3-Ours")
-        self.RESPOND_PROMPT = RESPOND_PROMPT
+        # self.RESPOND_PROMPT = RESPOND_PROMPT
         self.I_Dont_Know = kwargs.get("I_Dont_Know", True) # False)#
 
     def call(self, *args, **kwargs):
@@ -69,6 +72,17 @@ class VideoRespond(Respond):
     @property
     def EXPERIENCE(self):
         return self.METHOD.EXPERIENCE
+    
+    @property
+    def EXPERIMENT(self):
+        return self.METHOD.EXPERIMENT
+    
+    @property
+    def ENCODER(self):
+        return self.METHOD.ENCODER
+    
+    def encode(self, s):
+        return self.METHOD.encode(s)
 
     @property
     def MEMORY(self):
@@ -82,7 +96,7 @@ class VideoRespond(Respond):
         # import json
         # hits = json.dumps(self.RETRIEVE(query), ensure_ascii=False)
         
-        hits = self.RETRIEVE(query, top_k=3) #hits is a list of strings
+        hits = self.RETRIEVE(query) #hits is a list of strings
         # print("hits", hits)
         YOG.debug(("VideoRespond Hits: ", hits), tag="VideoRespond")
         

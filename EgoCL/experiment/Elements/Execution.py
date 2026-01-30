@@ -43,6 +43,8 @@ class Execution:
         self.load_style_respond = load_style_respond
         self.ckpt = kwargs.get("ckpt", "latest") #("new", "%06d", "latest")
         self.mode = kwargs.get("mode", "normal") #"normal", "strong"
+        self.EXPERIMENT = kwargs.get("EXPERIMENT", None)
+        self.OPTIONAL = kwargs.get("OPTIONAL", False)
         self.N = N
         self.SAMPLES = SAMPLES
         self.METHOD = None
@@ -92,6 +94,7 @@ class Execution:
             else: raise FileNotFoundError(f"Execution file not found: {self.file_name}")
             if ckpt == "new": return
             ts6d = self.METHOD.load(ckpt)
+            if ts6d is None: return #no memory found, handle it as "new"
             from ...paths import MEMORY_DIR
             self.QUESTIONS.load_res(os.path.join(MEMORY_DIR(self.EXPERIENCE, self.METHOD), ts6d))
             self.QUESTIONS.sort_by_time()

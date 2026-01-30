@@ -1,1 +1,1 @@
-python $(dirname "${BASH_SOURCE[0]}")/answering.py -c yam/EgoLifeQA_J.json --q_list all
+python $(dirname "${BASH_SOURCE[0]}")/answering.py --q_list all -e EgoLifeQA_J

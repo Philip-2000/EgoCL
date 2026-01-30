@@ -1,37 +1,18 @@
 class Experiment:
-    def __init__(self, exp_config):
-        self.exp_config = exp_config
-        self.name = exp_config.get("name", "default_experiment")
-        self.EXPERIENCES = exp_config.get("EXPERIENCES", [])
-        self.EXECUTIONS  = exp_config.get("EXECUTIONS", "testing")
-        self.METHODS = exp_config.get("METHODS", "DumpMethod")
-        self.LOAD_STYLES = exp_config.get("LOAD_STYLES", "FORCE_CREATE")
-        self.LOAD_STYLE_QUESTIONS = exp_config.get("LOAD_STYLE_QUESTIONS", "FORCE_CREATE")
-        self.EGO = exp_config.get("EGO", True)
-        self.OPTIONAL = exp_config.get("OPTIONAL", False)
-        self.ckpt = exp_config.get("ckpt", "latest") #("new", "%06d", "latest")
-
+    def __init__(self, **kwargs):
+        from .Config import exp_config
+        self.exp_config = exp_config(**kwargs) 
+        self.name = self.exp_config.get("name", "experiment")
+        self.EXPERIENCE = self.exp_config["EXPERIENCE"]
+        self.EXECUTION  = self.exp_config["EXECUTION"]
+        self.METHOD = self.exp_config["METHOD"]
+        
     def __call__(self):
         from .Elements import Execution
         from ..data import Experience
 
-        for id, EXP in enumerate(self.EXPERIENCES):
-
-            experience_name = EXP
-            execution_name = self.EXECUTIONS if isinstance(self.EXECUTIONS, str) else self.EXECUTIONS[id] #these experiments usually shares the same execution name and settings, so we should allow setting the execution name and settings globally for all experiences in the experiment
-            load_style = self.LOAD_STYLES if isinstance(self.LOAD_STYLES, str) else self.LOAD_STYLES[id]
-            load_style_questions = self.LOAD_STYLE_QUESTIONS if isinstance(self.LOAD_STYLE_QUESTIONS, str) else self.LOAD_STYLE_QUESTIONS[id]
-            method = self.METHODS if isinstance(self.METHODS, str) else self.METHODS[id]
-
-            En = Execution(name=execution_name, load_style=load_style, load_style_questions=load_style_questions, **self.exp_config.get("EXECUTION_KWARGS", {}))
-            En.EXPERIENCE = Experience.load_from_name(experience_name=experience_name)
-            En.EXPERIENCE.EGO = self.EGO
-            En.OPTIONAL = self.OPTIONAL
-            assert En.mode != "strong" or (not En.OPTIONAL), "Strong mode is not compatible with OPTIONAL questions."
-            En.ckpt = self.ckpt
-            
-            En.METHOD = getattr(__import__("EgoCL.method", fromlist=[method]), method)(En.EXPERIENCE, EXECUTION=En, **self.exp_config.get("METHOD_KWARGS", {}))
-            En.load()
-
-            En()
-        
+        En = Execution(name=self.EXECUTION, EXPERIMENT=self, **self.exp_config.get("EXECUTION_KWARGS", {}))
+        En.EXPERIENCE = Experience.load_from_name(experience_name=self.EXPERIENCE)
+        En.METHOD = getattr(__import__("EgoCL.method", fromlist=[self.METHOD]), self.METHOD)(En.EXPERIENCE, EXECUTION=En, EXPERIMENT=self, **self.exp_config.get("METHOD_KWARGS", {}))
+        En.load()
+        En()

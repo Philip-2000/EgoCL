@@ -9,7 +9,17 @@ class VideoMethod(Method):
         self.MEMORIZER = VideoMemorize(self, **kwargs)
         self.EXECUTION = kwargs.get("EXECUTION", None)
         self.RESPOND = VideoRespond(self, **kwargs)
+        self.EXPERIMENT = kwargs.get("EXPERIMENT", None)
+        self.ENCODER = None
+        self.ENCODER_PATH = kwargs.get("ENCODER_PATH", None)
+        if self.ENCODER_PATH is not None:
+            from sentence_transformers import SentenceTransformer
+            self.ENCODER = SentenceTransformer(self.ENCODER_PATH)
     
+    def encode(self, s):
+        if self.ENCODER is None: raise ValueError("No ENCODER is set in VideoMethod.")
+        return self.ENCODER.encode(s)
+
     @property
     def atom_s(self):
         return self.MEMORIZER.atom_s
@@ -68,5 +78,5 @@ class VideoMethod(Method):
             self.RESPOND.load(self.TIME.seconds_experience)
 
         s = self.RESPOND(query)
-        YOG.info(("VideoMethod response:", s))
+        YOG.info(("VideoMethod response:", str(s).split("\n")[0]), tag="VideoMethod")
         return s
