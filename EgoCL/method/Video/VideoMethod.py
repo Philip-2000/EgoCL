@@ -13,12 +13,18 @@ class VideoMethod(Method):
         self.ENCODER = None
         self.ENCODER_PATH = kwargs.get("ENCODER_PATH", None)
         if self.ENCODER_PATH is not None:
-            from sentence_transformers import SentenceTransformer
-            self.ENCODER = SentenceTransformer(self.ENCODER_PATH)
+            from .VideoEncoder import VideoEncoderFactory
+            self.ENCODER = VideoEncoderFactory(self.ENCODER_PATH)
+            # from sentence_transformers import SentenceTransformer
+            # self.ENCODER = SentenceTransformer(self.ENCODER_PATH)
     
     def encode(self, s):
         if self.ENCODER is None: raise ValueError("No ENCODER is set in VideoMethod.")
-        return self.ENCODER.encode(s)
+        return self.ENCODER(s)
+    
+    def sim(self, query, document):
+        if self.ENCODER is None: raise ValueError("No ENCODER is set in VideoMethod.")
+        return self.ENCODER.sim(query, document)
 
     @property
     def atom_s(self):
@@ -39,6 +45,10 @@ class VideoMethod(Method):
     @property
     def MODEL(self):
         return self.MEMORIZER.MODEL
+    
+    @property
+    def TEXT(self):
+        return self.MEMORIZER.TEXT
 
     @property
     def TIME(self):
@@ -65,6 +75,7 @@ class VideoMethod(Method):
                 "Time cost for VideoMemorize model call:", round(one_time, 3),
                 "seconds, estimated remain time:", remain_time_humanized, 
                 "ratio than the video:", round(remain_time / max(self.EXPERIENCE.duration_s - e_s, 1e-2), 2), "Time Log:", time_log), tag="VideoMemorize")
+            self.MEMORY.MemorizeTime += one_time
             timer_start = time.time()
 
             one_time_avg = ((one_time_avg[0] * one_time_avg[1] + one_time) / (one_time_avg[1] + 1), one_time_avg[1] + 1)
@@ -72,11 +83,12 @@ class VideoMethod(Method):
             YOG.debug(f"Average time per MEMORIZER call: {one_time_avg[0]:.3f}s over {one_time_avg[1]} calls; Average time per tiny segment: {tiny_time_avg[0]:.3f}s over {tiny_time_avg[1]} calls")
 
     
-    def query(self, query):#first check the self.RESPOND.TIME and self.TIME
+    def query(self, query, **kwargs):#first check the self.RESPOND.TIME and self.TIME
         if self.RESPOND.TIME.seconds_experience < self.TIME.seconds_experience:
+            print(f"Updating RESPOND TIME from {self.RESPOND.TIME.seconds_experience} to {self.TIME.seconds_experience}")
             self.MEMORIZER.save()
             self.RESPOND.load(self.TIME.seconds_experience)
 
-        s = self.RESPOND(query)
+        s = self.RESPOND(query, **kwargs)
         YOG.info(("VideoMethod response:", str(s).split("\n")[0]), tag="VideoMethod")
         return s

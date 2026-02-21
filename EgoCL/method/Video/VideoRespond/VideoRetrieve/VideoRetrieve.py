@@ -13,6 +13,12 @@ class VideoRetrieve(Retrieve):
         self.MEMOR = VideoMemory(self.RESPOND.METHOD.MEMORIZER, **kwargs)
         self.top_k = top_k
 
+        self.search_field={"transcript":kwargs.get("search_field", {}).get("transcript", True), "screenshot_path":kwargs.get("search_field", {}).get("screenshot_path", True), "summary":kwargs.get("search_field", {}).get("summary", True)} 
+
+    @property
+    def fsize_kB(self):
+        return self.MEMORY.fsize_kB
+
     @property
     def EXPERIENCE(self):
         return self.RESPOND.EXPERIENCE
@@ -40,9 +46,9 @@ class VideoRetrieve(Retrieve):
     def ENCODINGS(self):
         return self.MEMORY.ENCODINGS
 
-    @property
-    def matrix(self):
-        return self.MEMORY.matrix
+    # @property
+    # def matrix(self):
+    #     return self.MEMORY.matrix
 
     @property
     def MEMORY(self):
@@ -87,12 +93,21 @@ class VideoRetrieve(Retrieve):
 
     @property
     def matrix(self):
-        return self.MEMORY.ENCODINGS.matrix
+        m, i = self.ENCODINGS.submatrix(self.search_field)
+        return m
 
-    def __call__(self, query: str):
+    def __call__(self, query: str, image=None):
         from . import YOG
         import numpy as np
         YOG.info(("Querying VectorRetrieve with query:", query))
-        sims = self.ENCODER.similarity(self.encode([query]), self.matrix)[0]
-        #idxs = np.argsort(-sims)[:top_k]
-        return self.ENCODINGS.results(sims, self.top_k) # [ self._texts[int(idx)] for idx in idxs]
+        sims = self.ENCODER.sim(query, self.matrix)[0]
+        
+        r,i = self.ENCODINGS.results(sims, self.top_k) # [ self._texts[int(idx)] for idx in idxs]
+
+        if image is not None:
+            sims = self.ENCODER.sim(image, self.matrix)[0]
+            r_image, i_image = self.ENCODINGS.results(sims, self.top_k)
+            i = list(set(i) | set(i_image))
+            r = [self.ENCODINGS.present(idx) for idx in i]
+        
+        return r

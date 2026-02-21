@@ -42,17 +42,62 @@ class Execution:
         self.load_style_questions = load_style_questions
         self.load_style_respond = load_style_respond
         self.ckpt = kwargs.get("ckpt", "latest") #("new", "%06d", "latest")
-        self.mode = kwargs.get("mode", "normal") #"normal", "strong"
+        # self.mode = kwargs.get("mode", "normal") #"normal", "strong"
+        self.option = kwargs.get("option", True)
+        self.strong = kwargs.get("strong", False)
+        
         self.EXPERIMENT = kwargs.get("EXPERIMENT", None)
-        self.OPTIONAL = kwargs.get("OPTIONAL", False)
+        # self.OPTIONAL = kwargs.get("OPTIONAL", False)
         self.N = N
         self.SAMPLES = SAMPLES
         self.METHOD = None
 
+        self._ENCODER = None
+        self.ENCODER_PATH = kwargs.get("ENCODER_PATH", None)
+        self.MODEL = kwargs.get("MODEL", "Qwen3-VL-8B-Instruct") 
+        self.TEXT = kwargs.get("TEXT", "Qwen3-Ours")
+
+    def call(self, *args, **kwargs):
+        from MyLm import call
+        return call(self.MODEL, *args, **kwargs)
+
+    def tall(self, *args, **kwargs): #text call, when you sure that this calling contains no video or image input, so that we can use a pure text model ( which is larger and faster ) to process it
+        from MyLm import call
+        return call(self.TEXT, *args, **kwargs)
+
+    @property
+    def ENCODER(self):
+        if hasattr(self.METHOD, "ENCODER") and self.METHOD.ENCODER is not None and self.METHOD.ENCODER_PATH is not None and self.ENCODER_PATH == self.METHOD.ENCODER_PATH: #prefer to use the method's encoder
+            self._ENCODER = self.METHOD.ENCODER
+        elif self._ENCODER is not None:
+            return self._ENCODER
+        elif self._ENCODER is None and self.ENCODER_PATH is not None:
+            from ... import VideoEncoderFactory
+            self._ENCODER = VideoEncoderFactory(self.ENCODER_PATH)
+        else:
+            raise ValueError("No ENCODER is set in Execution.")
+        return self._ENCODER
+
+    def encode(self, s):
+        return self.ENCODER(s)
+        # if hasattr(self.METHOD, "ENCODER") and self.METHOD.ENCODER is not None and self.METHOD.ENCODER_PATH is not None and self.ENCODER_PATH == self.METHOD.ENCODER_PATH: #prefer to use the method's encoder
+        #     self.ENCODER = self.METHOD.ENCODER
+        #     return self.METHOD.ENCODER(s)
+        # elif self.ENCODER is not None:
+        #     return self.ENCODER(s)
+        # elif self.ENCODER_PATH is not None:
+        #     from sentence_transformers import SentenceTransformer
+        #     self.ENCODER = SentenceTransformer(self.ENCODER_PATH)
+        #     return self.ENCODER(s)
+        # else:
+        #     raise ValueError("No ENCODER is set in Execution.")
+
     @property
     def file_name(self):
-        from .. import EXPERIMENT_ROOT
-        return os.path.join(EXPERIMENT_ROOT, self.name, self.EXPERIENCE.name, "execution.json")
+        # from .. import EXPERIMENT_ROOT
+        # return os.path.join(EXPERIMENT_ROOT, self.name, self.EXPERIENCE.name, "execution.json")
+        from EgoCL.paths import EXECUTION_FILE
+        return EXECUTION_FILE(self)
 
     def random_execution(self):
         import random
@@ -82,7 +127,6 @@ class Execution:
                 print("Generated Question:", self.QUESTIONS.QUESTIONS[-1].question, "Answer:", self.QUESTIONS.QUESTIONS[-1].answer, "QID:", self.QUESTIONS.QUESTIONS[-1].QID)
                 QID+=1
         
-    
     def load(self, ckpt=""):
         ckpt = ckpt if ckpt != "" else self.ckpt
         import json, os
@@ -168,9 +212,8 @@ class Execution:
 
             YOG.debug(f"Processing Question ID: {q.QID} at TIME: {q.TIME.seconds_experience}s")
             
-            q.respond(METHOD.query(q.query if self.mode == "normal" else q.question))
+            q.respond(METHOD.query(q.query,image=q.Image,opt=True) if self.option else None, METHOD.query(q.question,image=q.Image,opt=False) if self.strong else None)
             
-            q.save_res(os.path.join(MEMORY_DIR(self.EXPERIENCE, self.METHOD), "%06d" % int(METHOD.TIME.seconds_experience)), caching_video=caching_video)
-            # self.QUESTIONS.save_res(os.path.join(MEMORY_DIR(self.EXPERIENCE, self.METHOD), "%06d" % int(METHOD.TIME.seconds_experience)))
+            q.save_res(caching_video=caching_video)
         
         YOG.info(self.QUESTIONS.short_report(METHOD.TIME))

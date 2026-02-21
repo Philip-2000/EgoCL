@@ -1,36 +1,109 @@
-import os,json
+import os,json,yaml
+from os.path import dirname as opd, abspath as opa, join as opj
 
-class Loader:
-    def __init__(self, path):
-        self.path = path
-    
-    def load(self):
-        pass
 
-class Visualize:
-    def __init__(self,config):
+class Visualizer:
+    def __init__(self, config_path):
+        if not config_path.endswith('.yaml'):
+            config_path = opj(opd(opa(__file__)), 'configs', f'{config_path}.yaml')
+            assert os.path.exists(config_path), f"Config file {config_path} does not exist."
+        config = yaml.load( open(config_path, 'r'), Loader=yaml.FullLoader )
+
         from ...paths import MEMORY_ROOT
-        self.path = os.path.join(MEMORY_ROOT, Experience_name, Method)
-        self.LOADER = Loader(self.path)
-        self.DATAS = self.LOADER.load()
-        self.config = {}
+        from .Data import Loader
+        self.LOADER = Loader(config['Loader'])
+        
+        self.config = config['Visualizer']
+        self.LOADER()
+    
+    @property
+    def DATAS(self):
+        return self.LOADER.DATAS
     
     def __call__(self):
-        return
-        j = []
-        for t in sorted([t for t in os.listdir(self.path) if str(t).isdigit()], key=lambda x: int(x)):
-            filenames = [f for f in os.listdir( os.path.join(self.path, t) ) if f.endswith("result.json") and f.startswith("default")]
-            for f in filenames:
-                try:
-                    data = json.load( open( os.path.join(self.path, t, f), 'r') )
-                    # for d in [d for d in data if d['uid'] not in [item['uid'] for item in j]]: j.append(d)
-                    if data['uid'] not in [item['uid'] for item in j]: j.append(data)
-                except:
-                    pass
+        if self.config['Print']:
+            # for TRAIL in self.DATAS.TRAILS:
+            #     print(f"  Trail: {TRAIL.name}")
+            #     # Print header
+            #     header = ["Source/Trail"] + [f"{metric.name:<10}" for metric in self.DATAS.METRICS]
+            #     print('\t'.join(header))
+            #     for SOURCE in self.DATAS.SOURCES:
+            #         row = [f"{SOURCE.name[:15]}"]
+            #         for METRIC in self.DATAS.METRICS:
+            #             data = self.DATAS[(SOURCE.name, TRAIL.name, METRIC.name)].v
+            #             assert data is not None, f"Data for Source: {SOURCE.name}, Trail: {TRAIL.name}, Metric: {METRIC.name} is None."
+            #             row.append(f"{data:.3g}" if not (METRIC.name.endswith("Delay_Rate")) else f"{data:.3e}" )
+            #         print('\t'.join(row))
+            
+            header = ["Source/Trail"] + [f"{metric.name:<10}" for TRAIL in self.DATAS.TRAILS for metric in self.DATAS.METRICS]
+            print('\n', '\t& '.join(header))
+            for SOURCE in self.DATAS.SOURCES:
+                row = [f"{SOURCE.name[:15]}"]
+                for TRAIL in self.DATAS.TRAILS:
+                    for METRIC in self.DATAS.METRICS:
+                        data = self.DATAS[(SOURCE.name, TRAIL.name, METRIC.name)].v
+                        # assert data is not None, f"Data for Source: {SOURCE.name}, Trail: {TRAIL.name}, Metric: {METRIC.name} is None."
+                        if METRIC.name == "Similarity":
+                            data_str = (f"{data:.3g}")[1:] if data is not None else "--"
+                        elif METRIC.name.endswith("Delay_Rate"):
+                            shift = 10.0 if TRAIL.name == "EgoSchema" else (10000.0)
+                            data_str = f"{data*shift:.3g}" if data is not None else "--"
+                            data_str = data_str[1:] if data_str.startswith("0") else data_str
+                        elif METRIC.name.endswith("Delay"):
+                            data_str = f"{data:.3g}" if data is not None else "--"
+                        else:
+                            data_str = f"{data*100:.3g}\%" if data is not None else "--"
+                        row.append(data_str)
+                print('\t& '.join(row), "\\\\")
+
+        if self.config['Plot']:
+            import matplotlib.pyplot as plt
+            colors = ['b', '#4B8BBE', '#306998', '#6A5ACD', '#483D8B', '#8A2BE2', '#7B68EE', '#5F9EA0', '#20B2AA']
+            for metric in self.DATAS.METRICS:
+                plt.figure(figsize=(10,6))
+                plt.title(f'Metric: {metric.name}')
+                
+                W = 1.0 / (len(self.DATAS.SOURCES) + 1)
+                for i, SOURCE in enumerate(self.DATAS.SOURCES):
+                    values = []
+                    labels = []
+                    for TRIAL in self.DATAS.TRAILS:
+                        data = self.DATAS[(SOURCE.name, TRIAL.name, metric.name)].v
+                        assert data is not None, f"Data for Source: {SOURCE.name}, Trail: {TRIAL.name}, Metric: {metric.name} is None."
+                        values.append( data )
+                        labels.append( TRIAL.name )
+                    x = [j + i*W for j in range(len(values))]
+                    plt.bar(x, values, width=W, label=SOURCE.name, color=colors[i % len(colors)])
+                
+                plt.xticks( [j + W*(len(self.DATAS.SOURCES)-1)/2 for j in range(len(self.DATAS.TRAILS))], labels)
+                plt.ylabel(metric.name)
+                plt.legend(loc='upper left')
+                plt.grid(axis='y')
+                plt.tight_layout()
+                plt.savefig( f'{metric.name}.png' )
+                plt.close()
         
-        print(f"Average score: {round(sum([item['score'] for item in j])/len(j),4)}, {sum([item['score'] for item in j])} out of {len(j)} questions answered correctly.")
+        if self.config['Latex']:
+            from pylatex import Document, Tabular, NoEscape
 
+            doc = Document()
+            num_cols = len(self.DATAS.TRAILS) + 1
+            table = Tabular('l' + 'c' * (num_cols - 1))
+            header = ['Method \\ Benchmark'] + [trail.name for trail in self.DATAS.TRAILS]
+            table.add_row(header)
+            table.add_hline()
+            for SOURCE in self.DATAS.SOURCES:
+                row = [SOURCE.name]
+                for TRAIL in self.DATAS.TRAILS:
+                    data = self.DATAS[(SOURCE.name, TRAIL.name, self.DATAS.METRICS[0].name)].v
+                    assert data is not None, f"Data for Source: {SOURCE.name}, Trail: {TRAIL.name}, Metric: {self.DATAS.METRICS[0].name} is None."
+                    row.append(f'{data*100:.2f}\\%')
+                table.add_row(row)
+            doc.append(table)
+            with open('results_table.tex', 'w') as f:
+                f.write(doc.dumps())
 
+        
 #啥意思，就是说这边需要
 #（1）筹备数据
 #   数据有哪些要素：（a）它是哪个方法的，一共A种方法；（b）它是哪条实验的，一共B条实验（c）它是哪个测试指标的，一共C个测试指标

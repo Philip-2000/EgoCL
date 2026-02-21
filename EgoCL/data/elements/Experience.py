@@ -99,8 +99,10 @@ class Experience:
 
     @classmethod
     def load_from_name(cls, experience_name: str):
-        from .. import EPRC_ROOT
-        in_path = os.path.join(EPRC_ROOT, f'{experience_name}.json')
+        # from .. import EPRC_ROOT
+        # in_path = os.path.join(EPRC_ROOT, f'{experience_name}.json')
+        from EgoCL.paths import EXPERIENCE_FILE
+        in_path = EXPERIENCE_FILE(experience_name)
         return cls.load(in_path)
 
 
@@ -218,6 +220,16 @@ class Experience:
     def time_to_video(self, start_s: float, end_s: float):
         TIMESTAMPS = self.time_to_timestamps(start_s, end_s)
         return self.timestamps_to_video(TIMESTAMPS)
+
+    def time_to_image(self, seconds_experience):
+        TIMESTAMPS = self.time_to_timestamps(seconds_experience, seconds_experience+0.1)
+        video, transcripts = self.timestamps_to_video(TIMESTAMPS, get_video=True, get_transcripts=False)
+        if video is not None:
+            from EgoCL.paths import EXPERIMENT_IMAGES_ROOT
+            temp_path = os.path.join(EXPERIMENT_IMAGES_ROOT, f'{self.name}_{int(seconds_experience*1000)}.jpg')
+            video.save_frame(temp_path, t=0) # save the first frame of the clip as image
+            return temp_path
+        return None
 
     def timestamps_to_video(self, TIMESTAMPS, get_video=True, get_transcripts=True):
         from . import YOG

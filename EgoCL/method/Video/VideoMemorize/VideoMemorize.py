@@ -22,7 +22,8 @@ class VideoMemorize(Memorize):
 
         from functools import partial
         from .. import MEMORIZE_PROMPT
-        self.MEMORIZE_PROMPT = partial(MEMORIZE_PROMPT, EGO=self.EXPERIENCE.EGO, SCREEN_SHOT=self.SCREEN_SHOT)
+        self.Refer_Context = kwargs.get("Refer_Context", True)
+        self.MEMORIZE_PROMPT = partial(MEMORIZE_PROMPT, EGO=self.EXPERIENCE.EGO, SCREEN_SHOT=self.SCREEN_SHOT, REFER_CONTEXT=self.Refer_Context)
         
         self.strategy = {
             "clip": {

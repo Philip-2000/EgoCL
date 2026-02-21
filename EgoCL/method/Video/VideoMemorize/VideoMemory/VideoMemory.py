@@ -392,15 +392,20 @@ class VideoMemory(Memory):
         self.TIME = TimeStamp()
         self.TIME.EXPERIENCE = self.EXPERIENCE
         self.TIME.seconds_experience = 0
+        self.MemorizeTime = 0
         self.meta = {}
         self.VIDEO_MEM_SEGMENTS = []
 
         self.atom_s = kwargs.get("atom_s", 844)  ##length in seconds for atom video understanding
         self.num_segments = kwargs.get("num_segments", 30)  #number of frames for atom video understanding
 
+        self.encode_time = 0.0
         from .VideoEncode import StringEncodings
         self.ENCODINGS = StringEncodings(self, **kwargs)
-        self.load_encodes = kwargs.get("load_encodes", False)
+
+    @property
+    def encodes_config(self):
+        return self.ENCODINGS.encodes_config
 
     def __len__(self):
         return len(self.VIDEO_MEM_SEGMENTS)
@@ -458,6 +463,8 @@ class VideoMemory(Memory):
         return {
             "meta": self.meta,
             'TIME': self.TIME.to_dict,
+            'MemorizeTime': self.MemorizeTime,
+            'encode_time': self.encode_time,
             'VIDEO_MEM_SEGMENTS': [ segment.to_dict for segment in self.VIDEO_MEM_SEGMENTS ]
         }
 
@@ -479,24 +486,51 @@ class VideoMemory(Memory):
             LAST_ONE_CLIP = self.VIDEO_MEM_SEGMENTS[-1].VIDEO_MEM_CLIPS[-1].TIMESPAN.related_to(self.TIME) + ": " + self.VIDEO_MEM_SEGMENTS[-1].VIDEO_MEM_CLIPS[-1].data + "\n"
         return CURRENT_SEGMENT + LAST_ONE_CLIP + LAST_SECOND_CLIP
         
+    @property
+    def file_name(self):
+        from EgoCL.paths import MEMORY_FILE
+        return MEMORY_FILE(self)
 
     def save(self):
-        from .... import MEMORY_ROOT
-        import os
-        from os.path import join as opj
-        path = opj(MEMORY_ROOT, self.EXPERIENCE.name, self.METHOD.name, f"{int(self.TIME.seconds_experience):06d}", f"{self.EXPERIMENT.name}_memory.json")
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        import json
-        with open(path, 'w') as f:
+        # from .... import MEMORY_ROOT
+        # import os
+        # from os.path import join as opj
+        # path = opj(MEMORY_ROOT, self.EXPERIENCE.name, self.METHOD.name, f"{int(self.TIME.seconds_experience):06d}", f"{self.EXPERIMENT.name}_memory.json")
+        # os.makedirs(os.path.dirname(path), exist_ok=True)
+        import json, os
+        os.makedirs(os.path.dirname(self.file_name), exist_ok=True)
+        with open(self.file_name, 'w') as f:
             json.dump(self.to_dict, f, ensure_ascii=False, indent=4)
         
-        if self.load_encodes: self.ENCODINGS.save()
+        if self.encodes_config['pre']: self.ENCODINGS.save()
 
     def from_dict(self, dict_data):
         self.TIME.from_dict(dict_data['TIME'], None, None)
         self.meta = dict_data['meta']
+        self.MemorizeTime = dict_data.get('MemorizeTime', 0)
+        self.encode_time = dict_data.get('encode_time', 0.0)
         self.VIDEO_MEM_SEGMENTS = [VideoMemSegment(self).from_dict(segment_dict) for segment_dict in dict_data['VIDEO_MEM_SEGMENTS']]
         return self
+
+    @property
+    def fsize_bytes(self):
+        import os
+        fsize = os.path.getsize(self.file_name) if os.path.exists(self.file_name) else 0
+        if self.encodes_config['pre']:
+            fsize += self.ENCODINGS.fsize_bytes
+        if self.SCREEN_SHOT:
+            from EgoCL.paths import SCREENSHOT_DIR
+            screenshot_dir = SCREENSHOT_DIR(self)
+            if os.path.exists(screenshot_dir):
+                for dirpath, dirnames, filenames in os.walk(screenshot_dir):
+                    for f in filenames:
+                        fp = os.path.join(dirpath, f)
+                        fsize += os.path.getsize(fp)
+        return fsize
+
+    @property
+    def fsize_kB(self):
+        return round(self.fsize_bytes / 1024, 2) #FIXME: 未来要引入截屏、预保存的编码的尺寸统计
 
     def load(self, seconds_experience, experiment_name=None):
         from .... import MEMORY_ROOT
@@ -504,22 +538,31 @@ class VideoMemory(Memory):
         if isinstance(seconds_experience, str) and seconds_experience == "latest":
             import os
             exp_mem_path = opj(MEMORY_ROOT, self.EXPERIENCE.name, self.METHOD.name)
-            if not os.path.exists(exp_mem_path):
-                raise FileNotFoundError(f"Memory path not found: {exp_mem_path}")
+            os.makedirs(exp_mem_path, exist_ok=True)
             available_times = [int(name) for name in os.listdir(exp_mem_path) if name.isdigit()]
             if len(available_times) == 0:
                 return None
             seconds_experience = max(available_times)
-        path = opj(MEMORY_ROOT, self.EXPERIENCE.name, self.METHOD.name, f"{int(seconds_experience):06d}", f"{experiment_name if experiment_name is not None else self.EXPERIMENT.name}_memory.json")
-        import json
-        with open(path, 'r') as f:
+        
+        self.TIME.seconds_experience = seconds_experience
+        
+        # path = opj(MEMORY_ROOT, self.EXPERIENCE.name, self.METHOD.name, f"{int(seconds_experience):06d}", f"{experiment_name if experiment_name is not None else self.EXPERIMENT.name}_memory.json")
+        import json, os
+        with open(self.file_name, 'r') as f:
             data = json.load(f)
+
+
         self.from_dict(data)
 
         self.ENCODINGS.build()
-        self.ENCODINGS.load("%06d" % int(seconds_experience))
+        self.ENCODINGS.load("%06d" % int(self.TIME.seconds_experience))
 
-        return "%06d" % int(seconds_experience)
+        return "%06d" % int(self.TIME.seconds_experience)
+
+    @property
+    def screenshot_dir(self):
+        from EgoCL.paths import SCREENSHOT_DIR
+        return SCREENSHOT_DIR(self)
 
     def __call__(self, clip, TIMESPAN, summary, meta=None, START_NATURAL=None):
         atom = VideoMemAtom(data=summary, meta=meta if meta is not None else {}, CLIP=None)
@@ -531,17 +574,16 @@ class VideoMemory(Memory):
             atom.data = summary
         else:    
             from ... import SCREEN_SHOOTING
-            from .....paths import MEMORY_ROOT
+            # from .....paths import MEMORY_ROOT
             from os.path import join as opj
             import os
             from PIL import Image
             images, descriptions, times, summary = SCREEN_SHOOTING(clip, summary, TIMESPAN, START_NATURAL)
             atom.data = summary
-            images_dir = opj(MEMORY_ROOT, self.EXPERIENCE.name, self.METHOD.name, f"ScreenShots", f"{self.EXPERIMENT.name}")
-            os.makedirs(images_dir, exist_ok=True)
+            os.makedirs(self.screenshot_dir, exist_ok=True)
             atom.meta['screenshots'] = []
             for i, (img, desc, t) in enumerate(zip(images, descriptions, times)):
-                img_path = opj(images_dir, f"{t}.png")
+                img_path = opj(self.screenshot_dir, f"{t}.png")
                 #img is numpy.ndarray
                 Image.fromarray(img).save(img_path)
                 atom.meta['screenshots'].append({'path': img_path, 'description': desc, 'time': t})
@@ -550,7 +592,11 @@ class VideoMemory(Memory):
         #self.MEMORY.append(clip)
         if len(self.VIDEO_MEM_SEGMENTS) == 0: self.VIDEO_MEM_SEGMENTS.append(VideoMemSegment(self))
         self.VIDEO_MEM_SEGMENTS[-1].append_atom(atom)
-        self.ENCODINGS.append_atom(atom)
+        if self.encodes_config['pre']:
+            import time
+            start_time = time.time()
+            self.ENCODINGS.append_atom(atom, len(self.VIDEO_MEM_SEGMENTS[-1].VIDEO_MEM_CLIPS)-1, force_encoding=True)
+            self.encode_time += time.time() - start_time
         self.organize()
 
 

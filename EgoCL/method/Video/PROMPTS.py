@@ -63,22 +63,32 @@
 #     QUERY_PROMPT = "User Query (Multiple Choice):\n" + query + "\n"
 #     return SYSTEM_PROMPT, RAG_PROMPT + "\n" + QUERY_PROMPT
 
-def MEMORIZE_PROMPT(MEMORY_CONTEXT, EGO=True, SCREEN_SHOT=False):
+def MEMORIZE_PROMPT(MEMORY_CONTEXT, EGO=True, SCREEN_SHOT=False, REFER_CONTEXT=True):
     SYSTEM_PROMPT = ""
 
     #(1) EGO
     if not EGO:
-        SYSTEM_PROMPT += "You are a video memory assistant that helps users summarize videos based on the provided video and memory context.\n\
-            You will be provided with a video clip and relevant memory context information."
+        if REFER_CONTEXT:
+            SYSTEM_PROMPT += "You are a video memory assistant that helps users summarize videos based on the provided video and memory context.\n\
+                You will be provided with a video clip and relevant memory context information."
         
-        SYSTEM_PROMPT += "Your task is to generate a concise and informative summary of the video using a neutral perspective, incorporating relevant details from the memory context."
+            SYSTEM_PROMPT += "Your task is to generate a concise and informative summary of the video using a neutral perspective, incorporating relevant details from the memory context."
+        else:
+            SYSTEM_PROMPT += "You are a video memory assistant that helps users summarize videos based on the provided video.\
+                You will be provided with a video clip."
             
+            SYSTEM_PROMPT += "Your task is to generate a concise and informative summary of the video using a neutral perspective, describing the key events and details in the video."
         
     else:
-        SYSTEM_PROMPT += "You are an egocentric video memory assistant that helps users to summarize based on the provided egocentric video and memory context.\n\
-            You will be provided with a egocentric video clip and relevant memory context information."
-
-        SYSTEM_PROMPT += "Your task is to generate a concise and informative summary of the video by egocentric perspective i.e. use \"I\", \"me\", \"my\", etc., incorporating relevant details from the memory context."
+        if REFER_CONTEXT:
+            SYSTEM_PROMPT += "You are an egocentric video memory assistant that helps users to summarize based on the provided egocentric video and memory context.\n\
+                You will be provided with a video clip and relevant memory context information."
+        
+            SYSTEM_PROMPT += "Your task is to generate a concise and informative summary of the video by egocentric perspective i.e. use \"I\", \"me\", \"my\", etc., incorporating relevant details from the memory context."
+        else:
+            SYSTEM_PROMPT += "You are an egocentric video memory assistant that helps users to summarize based on the provided egocentric video.\n\
+                You will be provided with a video clip."
+            SYSTEM_PROMPT += "Your task is to generate a concise and informative summary of the video by egocentric perspective i.e. use \"I\", \"me\", \"my\", etc., describing the key events and details in the video."
 
 
     #(2) TASK
@@ -94,15 +104,18 @@ def MEMORIZE_PROMPT(MEMORY_CONTEXT, EGO=True, SCREEN_SHOT=False):
 
     #(3) MEMORY CONTEXT
 
-    MEMORY_PROMPT = "Here is the memory context you can refer to while summarizing the video:\n" + MEMORY_CONTEXT
-    
+    if REFER_CONTEXT:
+        MEMORY_PROMPT = "Here is the memory context you can refer to while summarizing the video:\n" + MEMORY_CONTEXT
+    else:
+        MEMORY_PROMPT = ""
+        
     return SYSTEM_PROMPT, MEMORY_PROMPT
 
 
 def SCREEN_SHOOTING(clip, summary, TIMESPAN, START_NATURAL):
     import re, moviepy#, imageio
     images, descriptions, times = [], [], []
-    duration = TIMESPAN.ENDSTAMP.seconds_experience - TIMESPAN.STARTSTAMP.seconds_experience
+    duration = clip.duration #TIMESPAN.ENDSTAMP.seconds_experience - TIMESPAN.STARTSTAMP.seconds_experience
     
     #START_NATURAL="Day1_11:30:00"  #YYYY_MM_DD_hh:mm:ss
     #shift Day1_00:00:00 to 0 seconds
@@ -110,7 +123,7 @@ def SCREEN_SHOOTING(clip, summary, TIMESPAN, START_NATURAL):
     STARTSTAMP_seconds_natural += int(START_NATURAL.split("_")[1].split(":")[0]) * 3600 + int(START_NATURAL.split("_")[1].split(":")[1]) * 60 + int(START_NATURAL.split("_")[1].split(":")[2])
     
     for match in re.finditer(r"<frame>(\d+)%<description>(.*?)</description></frame>", summary):
-        percentage = max(int(match.group(1)), 99)
+        percentage = max(int(match.group(1)), 90)
         description = match.group(2)
 
         STAMP_seconds_natural = STARTSTAMP_seconds_natural + duration * (percentage / 100.0)

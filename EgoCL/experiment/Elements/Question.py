@@ -2,7 +2,7 @@ from ... import YOG
 Comparer = None
 
 class Question:
-    def __init__(self, TIME=None, question: str = None, ref_time = None, answer: str = None, response: str = None, choices: list = None, QID : str = None):
+    def __init__(self, TIME=None, question: str = None, ref_time = None, answer: str = None, response: str = None, choices: list = None, QID : str = None, image = None):
         self.QUESTIONS = None
         self.TIME = TIME
         
@@ -10,13 +10,32 @@ class Question:
         self.ref_time = ref_time
         self.answer = answer
         self.response = response
-        self.score = None
+        self.response_strong = None
+        self.score = {}
         self.choices = choices
         self.QID = QID
+        self.image = image
     
+    @property
+    def Image(self):
+        if self.image is None:
+            return None
+        if self.image == "current":
+            return self.EXPERIENCE.time_to_image(self.TIME.seconds_experience)
+        import os
+        if os.path.exists(self.image) and os.path.isfile(self.image) and self.image.lower().endswith(('.png', '.jpg', '.jpeg')):
+            return self.image
+        
     @property
     def query(self):
         return self.question + (" Options: " + " ".join([chr(65+i) + ". " + str(option) for i, option in enumerate(self.choices)]) if self.choices else "")
+
+    @property
+    def answer_string(self):
+        if self.choices is None:
+            return str(self.answer)
+        else:
+            return self.choices[ord(self.answer[0])-ord('A')]
 
     @property
     def OPTIONAL(self):
@@ -30,9 +49,17 @@ class Question:
     def METHOD(self):
         return self.QUESTIONS.METHOD
     
+    # @property
+    # def mode(self):
+    #     return self.QUESTIONS.mode
+
     @property
-    def mode(self):
-        return self.QUESTIONS.mode
+    def option(self):
+        return self.QUESTIONS.option
+    
+    @property
+    def strong(self):
+        return self.QUESTIONS.strong
 
     @property
     def EXECUTION(self):
@@ -45,29 +72,33 @@ class Question:
     @property
     def to_dict(self):
         return {
+            'image': self.image,
             'uid': self.QID,
             'TIME': self.TIME.to_dict if self.TIME is not None else None,
             'question': self.question,
             'ref_time': self.ref_time.to_dict if self.ref_time is not None else None,
             'answer': self.answer,
             'response': str(self.response) if self.response is not None else None,
+            'response_strong': str(self.response_strong) if getattr(self, 'response_strong', None) is not None else None,
             'score': self.score,
             'choices': self.choices,
             'open_ended': getattr(self, 'open_ended', None)
         }
     
-    def res_dict(self, CACHE_DIR, caching_video=True):
+    def res_dict(self, caching_video=True):
         return {
             'uid': self.QID,
             'TIME': self.TIME.to_dict if self.TIME is not None else None,
             'question': self.question,
             'ref_time': self.ref_time.to_dict if self.ref_time is not None else None,
-            'ground_truth': self.ground_truth(CACHE_DIR, caching_video=caching_video),
+            'ground_truth': self.ground_truth(caching_video=caching_video),
             'answer': self.answer,
             'choices': self.choices,
             'response': (self.response.res_dict if hasattr(self.response, "res_dict") else str(self.response)) if self.response is not None else None,
+            'response_strong': (self.response_strong.res_dict if hasattr(self.response_strong, "res_dict") else str(self.response_strong)) if getattr(self, 'response_strong', None) is not None else None,
             'score': self.score,
             'open_ended': (self.open_ended.res_dict if hasattr(self.open_ended, "res_dict") else str(self.open_ended)) if getattr(self, 'open_ended', None) is not None else None,
+            'image': self.image
         }
     
     # def save_res(self, dir, caching_video=True):
@@ -87,12 +118,29 @@ class Question:
     #             json.dump([self.res_dict(CACHE_DIR=cache_dir, caching_video=caching_video)], f, indent=4, ensure_ascii=False)
     
 
-    def save_res(self, CACHE_DIR, caching_video=True):
+    def call(self, *args, **kwargs):
+        return self.QUESTIONS.call(*args, **kwargs)
+
+    def tall(self, *args, **kwargs):
+        return self.QUESTIONS.tall(*args, **kwargs)
+
+    def encode(self, s):
+        return self.QUESTIONS.encode(s)
+    
+    @property
+    def ENCODER(self):
+        return self.QUESTIONS.ENCODER
+
+    @property
+    def file_name(self):
+        from EgoCL.paths import RESULTS_FILE
+        return RESULTS_FILE(self)
+
+    def save_res(self, caching_video=True):
         import os, json
-        os.makedirs(CACHE_DIR, exist_ok=True)
-        file_path = os.path.join(CACHE_DIR, f"{self.EXPERIMENT.name}_{self.QID}_result.json")
-        with open(file_path, 'w') as f:
-            json.dump(self.res_dict(CACHE_DIR, caching_video=caching_video), f, indent=4, ensure_ascii=False)
+        os.makedirs(os.path.dirname(self.file_name), exist_ok=True)
+        with open(self.file_name, 'w') as f:
+            json.dump(self.res_dict(caching_video=caching_video), f, indent=4, ensure_ascii=False)
 
     def from_dict(self, data_dict, load_style_respond="FORCE_LOAD"):
         from ...data.elements import TimeStamp, TimeSpan
@@ -104,11 +152,25 @@ class Question:
         self.question = data_dict.get('question', None)
         self.answer = data_dict.get('answer', None)
         self.response = data_dict.get('response', None) if load_style_respond == "FORCE_LOAD" else None #For FORCE_CREATE, we do not load response, wishing the method to give new response later
-        self.score = data_dict.get('score', None) if load_style_respond == "FORCE_LOAD" else None
+        self.response_strong = data_dict.get('response_strong', None) if load_style_respond == "FORCE_LOAD" else None
+        self.score = data_dict.get('score', {}) if load_style_respond == "FORCE_LOAD" else {}
         self.choices = data_dict.get('choices', None)
         self.QID = data_dict.get('uid', None)
+        self.image = data_dict.get('image', None)
 
-    def respond(self, response):
+    def respond(self, response, response_strong=None):
+        if self.option:
+            self.response = response
+
+        if self.strong:
+            self.response_strong = response_strong
+
+        self.evaluate()
+
+        return
+
+
+
         if self.mode == "normal":
             self.response = response
             self.evaluate()
@@ -119,11 +181,12 @@ class Question:
             self.response = self.METHOD.VlmBase({"content":[{"text": full_prompt}]})
             self.evaluate()
     
-    def __cache_video(self, CACHE_DIR, clip, start_s, end_s, caching_video=True):
+    def __cache_video(self, clip, start_s, end_s, caching_video=True):
         import os
         # from ...paths import CACHE_DIR
-        os.makedirs(CACHE_DIR, exist_ok=True)
-        video_cache_path = os.path.join(CACHE_DIR, f"{self.EXPERIENCE.name}_{self.QID}_{int(start_s)}_{int(end_s)}.mp4")
+        from EgoCL.paths import REFVIDEO_FILE
+        # os.makedirs(CACHE_DIR, exist_ok=True)
+        video_cache_path = REFVIDEO_FILE(self, start_s, end_s)
         if os.path.exists(video_cache_path):
             return video_cache_path
         
@@ -162,26 +225,61 @@ class Question:
             text_list.append(f"[{start_time}-{end_time}] {text}")
         return text_list
 
-    def ground_truth(self, CACHE_DIR, caching_video=True):
+    def ground_truth(self, caching_video=True):
 
         video, transcript = self.EXPERIENCE.time_to_video(max(self.ref_time.STARTSTAMP.seconds_experience-5.0,0.0), min(self.ref_time.ENDSTAMP.seconds_experience+5.0, self.EXPERIENCE.duration_s))
         
         if caching_video:
-            video_path = self.__cache_video(CACHE_DIR,video, max(self.ref_time.STARTSTAMP.seconds_experience-5.0,0.0), min(self.ref_time.ENDSTAMP.seconds_experience+5.0, self.EXPERIENCE.duration_s), caching_video=caching_video)
+            video_path = self.__cache_video(video, max(self.ref_time.STARTSTAMP.seconds_experience-5.0,0.0), min(self.ref_time.ENDSTAMP.seconds_experience+5.0, self.EXPERIENCE.duration_s), caching_video=caching_video)
         else:
-            video_path = os.path.join(CACHE_DIR, f"{self.EXPERIENCE.name}_{self.QID}_{int(start_s)}_{int(end_s)}.mp4")
+            from EgoCL.paths import REFVIDEO_FILE
+            video_path = REFVIDEO_FILE(self, max(self.ref_time.STARTSTAMP.seconds_experience-5.0,0.0), min(self.ref_time.ENDSTAMP.seconds_experience+5.0, self.EXPERIENCE.duration_s))
 
         return {'video_path': video_path, 'transcript': self.transform_transcripts(transcript)}
 
     def evaluate(self):
-        if self.OPTIONAL:
-            self.score = int(str(self.answer)[:1].lower() == str(self.response)[:1].lower())*1.0 #compare the first character only
-            return
-        global Comparer
-        if Comparer is None:
-            from sentence_transformers import SentenceTransformer
-            Comparer = SentenceTransformer("/mnt/data/models/Qwen3-Embedding-0.6B")
-        self.score = float(Comparer.similarity(Comparer.encode([self.answer]), Comparer.encode([self.response]))[0][0])
+        if self.option and self.response is not None:
+            self.score["option"] = int(str(self.answer)[:1].lower() == str(self.response)[:1].lower())*1.0  #compare the first character only
+        
+        if self.strong and self.response_strong is not None:
+            
+            
+            # answer_string_encode = self.encode([self.answer_string])
+            # encodes = self.encode(self.choices)
+            response_strong_raw = str(self.response_strong).strip()
+            # response_strong_encode = self.encode([response_strong_raw])
+
+            # simis = self.ENCODER.similarity(response_strong_encode, encodes)  #smaller is closer
+
+            simis = self.ENCODER.sim(response_strong_raw, self.choices)  #larger is closer
+
+            closest_idx = simis.flatten(start_dim=0).argmax().item()
+            self.score["closest"] = int(closest_idx == (ord(self.answer[0])-ord('A')))*1.0
+            # self.score["similarity"] = float(self.ENCODER.similarity(response_strong_encode, answer_string_encode))
+            self.score["similarity"] = float(self.ENCODER.sim(response_strong_raw, self.answer_string))
+            
+            llm_choose_force = self.tall(
+                {"content":[{"user":f"Question: {self.question}\nChoices: " + " ".join([chr(65+i) + ". " + str(option) for i, option in enumerate(self.choices)]) + f"\nYour Answer: {response_strong_raw}\nWhich option (A, B, C, ...) is the closest answer? Pick one even you think that none of them is appropriate."}]}
+            ).strip()
+            self.score["llm_choose_force"] = int(llm_choose_force[0].upper() == self.answer[0].upper())
+            llm_choose = self.tall(
+                {"content":[{"user":f"Question: {self.question}\nChoices: " + " ".join([chr(65+i) + ". " + str(option) for i, option in enumerate(self.choices)]) + f"\nYour Answer: {response_strong_raw}\nWhich option (A, B, C, ...) is the closest answer? If you think that none of them is appropriate, please say N."}]}
+            ).strip()
+            self.score["llm_choose"] = int(llm_choose[0].upper() == self.answer[0].upper())
+            llm_judge = self.tall(
+                {"content":[{"user":f"Question: {self.question}" + f"\nThe correct answer is {self.answer_string}. Is the answer '{response_strong_raw}' correct? Answer with Yes or No."}]}
+            ).strip()
+            self.score["llm_judge"] = int(llm_judge.strip().lower()[:3] == "yes")*1.0
+
+        # return
+        # if self.OPTIONAL:
+        #     self.score = int(str(self.answer)[:1].lower() == str(self.response)[:1].lower())*1.0 #compare the first character only
+        #     return
+        # global Comparer
+        # if Comparer is None:
+        #     from sentence_transformers import SentenceTransformer
+        #     Comparer = SentenceTransformer("/mnt/data/models/Qwen3-Embedding-0.6B")
+        # self.score = float(Comparer.similarity(Comparer.encode([self.answer]), Comparer.encode([self.response]))[0][0])
         
 class Questions:
     def __init__(self, load_style_question, load_style_respond):
@@ -204,9 +302,30 @@ class Questions:
         question.QUESTIONS = self
         return self
 
+    # @property
+    # def mode(self):
+    #     return self.EXECUTION.mode
+
+    def call(self, *args, **kwargs):
+        return self.EXECUTION.call(*args, **kwargs)
+
+    def tall(self, *args, **kwargs):
+        return self.EXECUTION.tall(*args, **kwargs)
+    
+    def encode(self, s):
+        return self.EXECUTION.encode(s)
+    
     @property
-    def mode(self):
-        return self.EXECUTION.mode
+    def ENCODER(self):
+        return self.EXECUTION.ENCODER
+
+    @property
+    def option(self):
+        return self.EXECUTION.option
+
+    @property
+    def strong(self):
+        return self.EXECUTION.strong
 
     @property
     def EXPERIENCE(self):
@@ -216,9 +335,9 @@ class Questions:
     def EXPERIMENT(self):
         return self.EXECUTION.EXPERIMENT
 
-    @property
-    def OPTIONAL(self):
-        return self.EXECUTION.OPTIONAL
+    # @property
+    # def OPTIONAL(self):
+    #     return self.EXECUTION.OPTIONAL
     
     @property
     def METHOD(self):
@@ -235,28 +354,28 @@ class Questions:
     def to_dict(self):
         return [q.to_dict for q in self.QUESTIONS]
 
-    def save_res(self, dir, caching_video=True):
-        raise AssertionError("Saving all question results in one file is deprecated. Please use each Question's save_res method instead.")
-        import os, json
-        os.makedirs(dir, exist_ok=True)
-        cache_dir = os.path.join(dir, "..", "RefVideos")
-        os.makedirs(cache_dir, exist_ok=True)
-        file_path = os.path.join(dir, "results.json")
-        with open(file_path, 'w') as f:
-            json.dump([q.res_dict(CACHE_DIR=cache_dir, caching_video=caching_video) for q in self.QUESTIONS if q.response is not None], f, indent=4, ensure_ascii=False)
+    # def save_res(self, dir, caching_video=True):
+    #     raise AssertionError("Saving all question results in one file is deprecated. Please use each Question's save_res method instead.")
+    #     import os, json
+    #     os.makedirs(dir, exist_ok=True)
+    #     cache_dir = os.path.join(dir, "..", "RefVideos")
+    #     os.makedirs(cache_dir, exist_ok=True)
+    #     file_path = os.path.join(dir, "results.json")
+    #     with open(file_path, 'w') as f:
+    #         json.dump([q.res_dict(CACHE_DIR=cache_dir, caching_video=caching_video) for q in self.QUESTIONS if q.response is not None], f, indent=4, ensure_ascii=False)
     
-    def load_res(self, dir):
-        import os, json
-        file_path = os.path.join(dir, "results.json")
-        if not os.path.exists(file_path):
-            return
-        with open(file_path, 'r') as f:
-            res_list = json.load(f)
-        res_dict = {res['uid']: res for res in res_list}
-        for q in self.QUESTIONS:
-            if q.QID in res_dict:
-                q.response = res_dict[q.QID]['response']
-                q.score = res_dict[q.QID]['score']
+    # def load_res(self, dir):
+    #     import os, json
+    #     file_path = os.path.join(dir, "results.json")
+    #     if not os.path.exists(file_path):
+    #         return
+    #     with open(file_path, 'r') as f:
+    #         res_list = json.load(f)
+    #     res_dict = {res['uid']: res for res in res_list}
+    #     for q in self.QUESTIONS:
+    #         if q.QID in res_dict:
+    #             q.response = res_dict[q.QID]['response']
+    #             q.score = res_dict[q.QID]['score']
 
     def evaluate_all(self):
         for q in self.QUESTIONS:
@@ -264,7 +383,7 @@ class Questions:
 
     def short_report(self, TIME):
         scores = [q.score for q in self.QUESTIONS if abs(q.TIME.seconds_experience - TIME.seconds_experience)< self.EXECUTION.METHOD.atom_s * 1.1 and q.score is not None]
-        return f"At TIME {TIME.seconds_experience}s, {len(scores)} questions evaluated, Average Score: {sum(scores)/len(scores) if len(scores)>0 else 'N/A'}"
+        return f"At TIME {TIME.seconds_experience}s, {len(scores)} questions evaluated, Average Score: {sum([s["option"] for s in scores])/len(scores) if len(scores)>0 else 'N/A'}"
     
     def __iter__(self):
         return iter(self.QUESTIONS)

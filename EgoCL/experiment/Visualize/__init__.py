@@ -1,1 +1,1 @@
-from .Visualize import Visualize
+from .Visualize import Visualizer

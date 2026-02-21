@@ -2,8 +2,9 @@ from .. import YOG
 from .AnswerExperiment import AnswerExperiment
 from .Experiment import Experiment
 from .Elements import Execution, Questions, Answering
-from .Visualize import Visualize
+from .Visualize import Visualizer
 from ..paths import EXPERIMENT_ROOT
+from .Config import exp_config, configs_path
 
 QUESTION_GENERATOR_PROMPT="You are a question generator which generate a question based on the provided experience annotations.\
     You will be provided with experience annotations, and please ask a detailed question about the experience based on the annotations and generate the answer.\

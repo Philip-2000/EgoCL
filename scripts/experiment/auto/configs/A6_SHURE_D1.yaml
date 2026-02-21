@@ -1,0 +1,40 @@
+EGO: true
+EXECUTION: benches_D1
+EXECUTION_KWARGS:
+  MODEL: Qwen2.5-VL-7B-Instruct:b
+  N: 2
+  OPTIONAL: true
+  SAMPLES: 1
+  ckpt: new
+  load_style: FORCE_LOAD
+  load_style_questions: FORCE_LOAD
+  mode: normal
+EXPERIENCE: EgoR1Bench_A6_SHURE_D1
+METHOD: VideoMethod
+METHOD_KWARGS:
+  ENCODER_PATH: /mnt/data/models/Qwen3-Embedding-0.6B
+  FPS: 4
+  I_Cant_See: false
+  I_Dont_Know: false
+  MODEL: Qwen2.5-VL-7B-Instruct:b
+  TEXT: Qwen3-Ours
+  VideoBufferSize: 1024
+  atom_s: 30
+  cover: true
+  entire: true
+  length: 5
+  load_encodes: false
+  num_segments: 30
+  strategy:
+    clip:
+      summarize: Concat
+    memory:
+      adjust: None
+      split: None
+    segment:
+      adjust: None
+      split: Force
+      summarize: Empty
+  top_k: 4
+  width: 540
+name: default
