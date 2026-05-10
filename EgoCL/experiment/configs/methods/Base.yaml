@@ -1,0 +1,88 @@
+# name: Base
+#
+# Refer_Context: True
+#
+# length: 4
+# top_k: 6
+# search_field: 
+#   transcript: True
+#   screenshot: True
+#   summary: True
+# cover: True
+# ENCODER_PATH: "Qwen3-VL-Embedding-2B"
+# 
+# encodes:
+#   save: True
+#   load_force: True
+#   load_not: False   #for both False case, it's most flexible
+#
+# I_Dont_Know: False
+
+
+
+
+name: Base
+input_name: Base
+EGO: true # false #
+METHOD: VideoMethod #DumpMethod #
+EXECUTION_KWARGS:
+  load_style: FORCE_LOAD
+  load_style_questions: FORCE_LOAD
+  OPTIONAL: true
+  N: 2
+  SAMPLES: 1
+  # MODEL: "Qwen2.5-VL-7B-Instruct"
+  TEXT: "Qwen3-Ours" # "Qwen3-32B" # "Qwen2.5-VL-7B-Instruct" #
+  
+  ENCODER_PATH: "Qwen3-Embed-0.6B"
+  # ENCODER_PATH: "/mnt/data/models/Qwen3-Embedding-0.6B"
+  
+  ckpt: latest #new # 
+  option: true
+  strong: true
+  # mode: "normal" # "strong" # 
+METHOD_KWARGS:
+  width: 540         #resize width for video understanding
+  atom_s: 30         #length in seconds for atom video understanding
+  num_segments: 30   #number of frames for atom video understanding
+  FPS: 4             #frame rate when we concatenate these frames into a NEW video, ONLY for video understanding model calls, such video's framerate is usually high, much higher than original video, in order to save space
+  I_Cant_See: False  #for debugging, to shortcut video understanding when the such calling is slow
+  VideoBufferSize: 1024  #size of the video buffer for caching video segments
+  Refer_Context: True #whether to refer the retrieved context when memorizing new video segments
+  strategy:
+    clip:
+      summarize: "Concat" # 'Empty' / 'Concat' / 'Summary' #
+    segment:
+      adjust: "None"
+      split: "Force"
+      summarize: "Empty" # 'Empty' / 'Concat' / 'Summary' #
+    memory:
+      adjust: "None"
+      split: "None"
+  
+  SCREEN_SHOT: True
+  
+  MODEL: "Qwen3-VL-8B-Instruct"
+  TEXT: "Qwen3-Ours" # "Qwen3-32B" # "Qwen2.5-VL-7B-Instruct" #
+  
+  # ENCODER_PATH: "/mnt/data/models/Qwen3-VL-Embedding-8B" # "/mnt/data/models/Qwen3-Embedding-0.6B" #  #path to the text encoder model
+  ENCODER_PATH: "Qwen3-VL-Embedding-2B" # "Qwen3-Embed-0.6B" 
+  
+  entire: False      #whether to use the entire video for question answering
+  length: 4
+  top_k: 6
+
+  search_field:
+    transcript: True
+    screenshot: True
+    summary: True
+
+  encodes:
+    pre: True
+    save: True
+    load_force: True
+    load_not: False   #for both False case, it's most flexible
+
+  cover: True
+  I_Dont_Know: False  #for debugging, to shortcut question answering when the such calling is slow
+  Respond_Cant_See: False

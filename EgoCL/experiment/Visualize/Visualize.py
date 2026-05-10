@@ -11,10 +11,13 @@ class Visualizer:
 
         from ...paths import MEMORY_ROOT
         from .Data import Loader
-        self.LOADER = Loader(config['Loader'])
-        
+        self.LOADER = Loader(config)
         self.config = config['Visualizer']
         self.LOADER()
+    
+    @property
+    def name(self):
+        return self.DATAS.name
     
     @property
     def DATAS(self):

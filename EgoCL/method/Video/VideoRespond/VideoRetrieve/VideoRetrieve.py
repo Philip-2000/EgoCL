@@ -13,7 +13,7 @@ class VideoRetrieve(Retrieve):
         self.MEMOR = VideoMemory(self.RESPOND.METHOD.MEMORIZER, **kwargs)
         self.top_k = top_k
 
-        self.search_field={"transcript":kwargs.get("search_field", {}).get("transcript", True), "screenshot_path":kwargs.get("search_field", {}).get("screenshot_path", True), "summary":kwargs.get("search_field", {}).get("summary", True)} 
+        self.search_field={"transcript":kwargs.get("search_field", {}).get("transcript", True), "screenshot":kwargs.get("search_field", {}).get("screenshot", True), "summary":kwargs.get("search_field", {}).get("summary", True)} 
 
     @property
     def fsize_kB(self):

@@ -1,0 +1,89 @@
+\begin{table}[htbp]
+    \centering
+    \fontsize{7}{10}\selectfont
+    \setlength{\tabcolsep}{6pt} % 调整列间距
+    \renewcommand{\arraystretch}{1.4} % 调整行高
+    \centering
+    \begin{tabular}{r|r|p{0.4cm}<{\centering}p{0.4cm}<{\centering}p{0.5cm}<{\centering}|p{0.4cm}<{\centering}p{0.4cm}<{\centering}p{0.5cm}<{\centering}|p{0.4cm}<{\centering}p{0.4cm}<{\centering}p{0.5cm}<{\centering}}
+        \textbf{Benchmark} & &
+            \multicolumn{3}{c|}{\fontsize{10}{12}\selectfont Egoschema} &
+            \multicolumn{3}{c|}{\fontsize{10}{12}\selectfont EgoLifeQA} &
+            \multicolumn{3}{c}{\fontsize{10}{12}\selectfont EgoR1Bench}\\ \hline \hline
+        \textbf{Metric} & 
+        & $\overline{\alpha^c}$ & $\overline{\alpha^e_E}$ & $\overline{\theta^e}$
+        & $\overline{\alpha^c}$ & $\overline{\alpha^e_E}$ & $\overline{\theta^e}$
+        & $\overline{\alpha^c}$ & $\overline{\alpha^e_E}$ & $\overline{\theta^e}$ \\
+        Unit & Size
+        & \% & \% & --
+        & \% & \% & --
+        & \% & \% & -- \\ \hline
+        %\textit{Open Source Models} & & & & & & & & & & \\
+        Qwen3VL~\cite{yang2025Qwen3} & 32B & 68.4        & 59.2        & .608  & 36.4  & 23.8        & .312  & 33.7        & 23.3        & .325 \\
+        Qwen2.5VL~\cite{qwen2025Qwen25} & 72B & 72.8        & 59.8        & .608  & 29.6        & 24.8        & .275  & 34.7        & 24.0  & .287 \\
+        LLaVA-Video~\cite{zhang2025LLaVAVideo} & 72B & 74.0  & 55.0  & .689  & 35.4        & 21.2        & .599  & 41.0  & 19.7        & .578 \\
+        LLaVA-OV~\cite{li2024LLaVAOneVision} & 72B & 66.0  & 49.2        & .673  & 38.0  & 25.2        & .606  & 41.7        & 26.0  & .578 \\
+        InternVL3.5~\cite{zhu2025InternVL3} & 38B & 80.2        & 59.8        & .719  & 35.8        & 24.0  & .464  & 35.7        & 24.0  & .503 \\
+        InternVideo2.5~\cite{wang2025InternVideo25} & 8B & 74.4        & 53,0  & .640   & 28.0  & 23.8        & .478  & 30.0  & 22.0  & .502 \\
+        EgoGPT~\cite{yang2025EgoLife} & 7B & 57.6        & 48.6        & .660   & 35.0  & 26.0  & .594  & 30.0  & 22.0  & .570 \\
+        LongVA~\cite{zhang2024LongVA} & 7B & 49.2        & 43.0  & .597  & 34.2        & 24.2        & .338  & 30.7        & 24.0  & .370 \\
+        \hline
+        %\textit{Open Source Methods} & & & & & & & & & & & & & \\
+        EgoButler~\cite{yang2025EgoLife} & 7B &38.5 &46.2 &.525 & 27.7 & 26.4&.415 &21.0 &22.1  &.467 \\
+        Ego-R1~\cite{tian2025EgoR1} & 3B & 65.4 & 49.2 & .567 & 35.0 & 24.0 & .450 & 45.0 & 24.6 & .394 \\
+        M3Agent~\cite{long2025M3Agent} & 70B &59.4 &50.0 &.594 &31.4 &22.2 &.451 &31.7 &30.7 &.460 \\
+        HippoMM~\cite{lin2025HippoMM} &* &55.6 &25.0 &.628 &16.7 &26.1 & .305 &14.3 &9.33 &.347 \\
+        % MemVerse~\cite{liu2025MemVerse} & & & & & & & & & & \\
+        EgoVidMem & * & 88.6 & 74.2 & .692 & 55.0 & 34.2  & .451 & 59.0   & 38.7        & .571  \\ \hline \hline
+        \textbf{Metric} & 
+        & $\overline{\alpha^e_C}$ & $\overline{\alpha^{e+}_C} $ & $\overline{\alpha^e_J}$
+        & $\overline{\alpha^e_C}$ & $\overline{\alpha^{e+}_C} $ & $\overline{\alpha^e_J}$
+        & $\overline{\alpha^e_C}$ & $\overline{\alpha^{e+}_C} $ & $\overline{\alpha^e_J}$ \\
+        Unit & Size
+        & \% & \% & \%
+        & \% & \% & \%
+        & \% & \% & \% \\ \hline
+        %\textit{Open Source Models} & & & & & & & & & & \\
+        Qwen3VL~\cite{yang2025Qwen3} & 32B & 63.8        & 51.8        & 51.8        & 30.4        & 6.40 & 29.8        & 27.7        & 8.00   & 28.0 \\
+        Qwen2.5VL~\cite{qwen2025Qwen25} & 72B & 64.6        & 52.4        & 44.4        & 33.2        & 4.80 & 9.60 & 26.0  & 4.33        & 21.0 \\
+        LLaVA-Video~\cite{zhang2025LLaVAVideo} & 72B & 61.6        & 48.8        & 38.0  & 26.8        & 10.6        & 6.80 & 29.7        & 16.7        & 17.3 \\
+        LLaVA-OV~\cite{li2024LLaVAOneVision} & 72B & 60.4        & 47.4        & 37.2        & 29.2        & 11.6        & 8.80 & 28.3        & 14.3        & 18.7 \\
+        InternVL3.5~\cite{zhu2025InternVL3} & 38B & 65.0  & 53.0  & 40.6        & 26.0  & 7.62 & 6.23 & 30.3        & 15.7        & 17.7 \\
+        InternVideo2.5~\cite{wang2025InternVideo25} & 8B & 58.2        & 44.6        & 31.4        & 27.4        & 9.40 & 5.60 & 29.3        & 13.0  & 14.0 \\
+        EgoGPT~\cite{yang2025EgoLife} & 7B & 54.8        & 41.0  & 33.8        & 29.2        & 11.0  & 9.00   & 27.7        & 19.0  & 21.7 \\
+        LongVA~\cite{zhang2024LongVA} & 7B & 52.8        & 41.4        & 34.2        & 30.8        & 5.40 & 3.60 & 29.3        & 9.67        & 14.3 \\
+        \hline
+        %\textit{Open Source Methods} & & & & & & & & & & & & & \\
+        EgoButler~\cite{yang2025EgoLife} & 7B &38.4 &7.80 &23.1 &31.0&2.40 &4.40 &25.7 &4.33  &13.3\\
+        Ego-R1~\cite{tian2025EgoR1} & 3B & 63.0 & 54.8 & 23.4 & 25.6 & 6.40  & 5.20 & 22.0 & 3.67 & 12.0 \\
+        M3Agent~\cite{long2025M3Agent} & 70B &62.6  &42.2 &31.4 &24.4 &2.80 &22.6 &31.7 &10.3 &21.7 \\
+        HippoMM~\cite{lin2025HippoMM} & *&43.8 &43.8 &37.4 & 30.4&4.40 &4.40 & 9.33&0.00 &5.00 \\
+        % MemVerse~\cite{liu2025MemVerse} & & & & & & & & & & \\
+        EgoVidMem & * &65.0  & 64.8   & 56.2 & 39.4        & 12.8  & 30.4   & 30.6        & 18.3  & 29.7  \\
+    \end{tabular}
+    \caption{Accuracy Metrics' Experimental results on different egocentric benchmarks.}
+    \label{tab:exp_acc}
+\end{table} 
+
+
+\iffalse
+Source/Trail    & Accuracy      & Closest       & Similarity    & Accuracy      & Closest       & Similarity    & Accuracy      & Closest       & Similarity
+Qwen3-VL-8B-Ins & 68.4        & 59.2        & .608  & 36  & 23.8        & .312  & 33.7        & 23.3        & .325 \\
+Qwen2.5-VL-7B-I & 72.8        & 59.8        & .608  & 29.6        & 24.8        & .275  & 34.7        & 24  & .287 \\
+LLaVA-Video-7B- & 74  & 55  & .689  & 35.4        & 21.2        & .599  & 41  & 19.7        & .578 \\
+llava-onevision & 66  & 49.2        & .673  & 38  & 25.2        & .606  & 41.7        & 26  & .578 \\
+InternVL3_5-8B  & 80.2        & 59.8        & .719  & 35.8        & 24  & .464  & 35.7        & 24  & .503 \\
+InternVideo2.5- & 74.4        & 53  & .64   & 28  & 23.8        & .478  & 30  & 22  & .502 \\
+EgoGPT-7b-EgoIT & 57.6        & 48.6        & .66   & 35  & 26  & .594  & 30  & 22  & .574 \\
+LongVA-7B-DPO   & 49.2        & 43  & .597  & 34.2        & 24.2        & .338  & 30.7        & 24  & .37 \\
+
+Source/Trail    & LLMChoose     & LLMChoose_Abstent     & LLMJudge      & LLMChoose     & LLMChoose_Abstent     & LLMJudge      & LLMChoose     & LLMChoose_Abstent     & LLMJudge  
+Qwen3-VL-8B-Ins & 63.8        & 51.8        & 51.8        & 30.4        & 6.4 & 29.8        & 27.7        & 8.0   & 38.0 \\
+Qwen2.5-VL-7B-I & 64.6        & 52.4        & 44.4        & 33.2        & 4.8 & 9.6 & 26  & 4.33        & 21 \\
+LLaVA-Video-7B- & 61.6        & 48.8        & 38.0  & 26.8        & 10.6        & 6.8 & 29.7        & 16.7        & 17.3 \\
+llava-onevision & 60.4        & 47.4        & 37.2        & 29.2        & 11.6        & 8.8 & 28.3        & 14.3        & 18.7 \\
+InternVL3_5-8B  & 65  & 53  & 40.6        & 26  & 7.6 & 6.2 & 30.3        & 15.7        & 17.7 \\
+InternVideo2.5- & 58.2        & 44.6        & 31.4        & 27.4        & 9.4 & 5.6 & 29.3        & 13  & 14 \\
+EgoGPT-7b-EgoIT & 54.8        & 41.0  & 33.8        & 29.2        & 11  & 9   & 27.7        & 19  & 21.7 \\
+LongVA-7B-DPO   & 52.8        & 41.4        & 34.2        & 30.8        & 5.4 & 3.6 & 29.3        & 9.67        & 14.3 \\
+
+\fi

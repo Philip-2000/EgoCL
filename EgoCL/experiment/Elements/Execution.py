@@ -56,6 +56,10 @@ class Execution:
         self.ENCODER_PATH = kwargs.get("ENCODER_PATH", None)
         self.MODEL = kwargs.get("MODEL", "Qwen3-VL-8B-Instruct") 
         self.TEXT = kwargs.get("TEXT", "Qwen3-Ours")
+    
+    @property
+    def I_Dont_Know(self):
+        return self.METHOD.I_Dont_Know if hasattr(self.METHOD, "I_Dont_Know") else False
 
     def call(self, *args, **kwargs):
         from MyLm import call
@@ -140,7 +144,7 @@ class Execution:
             ts6d = self.METHOD.load(ckpt)
             if ts6d is None: return #no memory found, handle it as "new"
             from ...paths import MEMORY_DIR
-            self.QUESTIONS.load_res(os.path.join(MEMORY_DIR(self.EXPERIENCE, self.METHOD), ts6d))
+            # self.QUESTIONS.load_res(os.path.join(MEMORY_DIR(self.EXPERIENCE, self.METHOD), ts6d))
             self.QUESTIONS.sort_by_time()
         else:
             raise ValueError(f"Unknown load_style: {load_style}")

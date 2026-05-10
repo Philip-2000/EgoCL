@@ -12,11 +12,9 @@ class VideoMethod(Method):
         self.EXPERIMENT = kwargs.get("EXPERIMENT", None)
         self.ENCODER = None
         self.ENCODER_PATH = kwargs.get("ENCODER_PATH", None)
-        if self.ENCODER_PATH is not None:
+        if self.ENCODER_PATH is not None and ( not self.I_Dont_Know):
             from .VideoEncoder import VideoEncoderFactory
             self.ENCODER = VideoEncoderFactory(self.ENCODER_PATH)
-            # from sentence_transformers import SentenceTransformer
-            # self.ENCODER = SentenceTransformer(self.ENCODER_PATH)
     
     def encode(self, s):
         if self.ENCODER is None: raise ValueError("No ENCODER is set in VideoMethod.")
@@ -57,6 +55,10 @@ class VideoMethod(Method):
     @property
     def MEMORY(self):
         return self.MEMORIZER.MEMORY
+    
+    @property
+    def I_Dont_Know(self):
+        return self.RESPOND.I_Dont_Know if hasattr(self.RESPOND, "I_Dont_Know") else False
 
     def load(self, ckpt):
         return self.MEMORIZER.load(ckpt)
@@ -85,7 +87,7 @@ class VideoMethod(Method):
     
     def query(self, query, **kwargs):#first check the self.RESPOND.TIME and self.TIME
         if self.RESPOND.TIME.seconds_experience < self.TIME.seconds_experience:
-            print(f"Updating RESPOND TIME from {self.RESPOND.TIME.seconds_experience} to {self.TIME.seconds_experience}")
+            YOG.debug(f"Updating RESPOND TIME from {self.RESPOND.TIME.seconds_experience} to {self.TIME.seconds_experience}")
             self.MEMORIZER.save()
             self.RESPOND.load(self.TIME.seconds_experience)
 

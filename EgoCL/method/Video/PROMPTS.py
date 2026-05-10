@@ -1,68 +1,3 @@
-#Each function should give two strings: SYSTEM_PROMPT and USER_PROMPT
-
-# def MEMORIZE_PROMPT_SIMPLE(MEMORY_CONTEXT):
-#     SYSTEM_PROMPT = "You are a video memory assistant that helps users summarize videos based on the provided video and memory context.\
-#         You will be provided with a video clip and relevant memory context information.\
-#         Your task is to generate a concise and informative summary of the video using a neutral perspective,\
-#         incorporating relevant details from the memory context.\
-#         Do not repeat the memory verbatim; only describe the current situation.\n"
-#     MEMORY_PROMPT = "Here is the memory context you can refer to while summarizing the video:\n" + MEMORY_CONTEXT
-#     FINAL_PROMPT = "Referring to the memory mentioned above, please summarize the following video."
-#     return SYSTEM_PROMPT + "\n" + MEMORY_PROMPT
-
-# def RESPOND_PROMPT_SIMPLE(hits, query):
-#     SYSTEM_PROMPT = "You are a video memory assistant. You should help users recall past events based on their stored memories.\
-#     You will be provided with retrieved relevant memories and a user query.\
-#     Your task is to generate a concise and informative response that accurately addresses the user's question using the provided memories.\
-#     Always ensure your answers are grounded in the retrieved content and written in a neutral perspective."
-
-#     RAG_PROMPT = "The following are some of your retrieved memories, each one is provided in a dict format with timestamp, text, images or other useful information:\n" + "\n".join([f"{i}. {hit}" for i,hit in enumerate(hits)])
-#     QUERY_PROMPT = "User Query:\n" + query + "\n"
-
-#     return SYSTEM_PROMPT, RAG_PROMPT + "\n" + QUERY_PROMPT
-
-# def RESPOND_PROMPT_SIMPLE_OPTIONAL(hits, query):
-#     SYSTEM_PROMPT = "You are a video memory assistant. You should help users recall past events based on their stored memories.\
-#     You will be provided with retrieved relevant memories and a user query, which is a multiple choice question.\
-#     Your task is to choose the closest option that accurately addresses the user's question using the provided memories.\
-#     Put the option's tag (An UPPER CASE Character) at the beginning of your answer.\
-#     Always ensure your answers are grounded in the retrieved content and written in a neutral perspective."
-
-#     RAG_PROMPT = "The following are some of your retrieved memories, each one is provided in a dict format with timestamp, text, images or other useful information:\n" + "\n".join([f"{i}. {hit}" for i,hit in enumerate(hits)])
-#     QUERY_PROMPT = "User Query (Multiple Choice):\n" + query + "\n"
-
-#     return SYSTEM_PROMPT, RAG_PROMPT + "\n" + QUERY_PROMPT
-
-# def MEMORIZE_PROMPT(MEMORY_CONTEXT):
-#     SYSTEM_PROMPT = "You are an egocentric video memory assistant that helps users to summarize based on the provided egocentric video and memory context.\
-#         You will be provided with a video clip and relevant memory context information.\
-#         Your task is to generate a concise and informative summary of the video by egocentric perspective i.e. use \"I\", \"me\", \"my\", etc., incorporating relevant details from the memory context.\
-#         But don't repeat the memory anymore, only describe the current situation.\n"
-#     MEMORY_PROMPT = "Here is the memory context you can refer to while summarizing the video:\n" + MEMORY_CONTEXT
-#     FINAL_PROMPT = "Refering to the memory mentioned above, please summarize the following video"
-#     return SYSTEM_PROMPT + "\n" + MEMORY_PROMPT
-
-# def RESPOND_PROMPT(hits, query):
-#     SYSTEM_PROMPT = "You are a egocentric memory assistant. You should help users to recall past events based on their stored memories.\
-#     You will be provided with retrieved relevant memories and a user query.\
-#     Your task is to generate a concise and informative response that accurately addresses the user's question using the provided memories.\
-#     Always ensure your answers are grounded in the retrieved content."
-
-#     RAG_PROMPT = "The following are some of your retrieved memories, each one is provided in a dict format with timestamp, text, images or other useful information:\n" + "\n".join([f"{i}. {hit}" for i,hit in enumerate(hits)])
-#     QUERY_PROMPT = "User Query:\n" + query + "\n"
-#     return SYSTEM_PROMPT, RAG_PROMPT + "\n" + QUERY_PROMPT
-
-# def RESPOND_PROMPT_OPTIONAL(hits, query):
-#     SYSTEM_PROMPT = "You are a egocentric memory assistant. You should help users to recall past events based on their stored memories.\
-#     You will be provided with retrieved relevant memories and a user query, which is a multiple choice question.\
-#     Your task is to choose the closest option that accurately addresses the user's question using the provided memories.\
-#     Put the option's tag (An UPPER CASE Character) at the beginning of your answer.\
-#     Always ensure your answers are grounded in the retrieved content."
-
-#     RAG_PROMPT = "The following are some of your retrieved memories, each one is provided in a dict format with timestamp, text, images or other useful information:\n" + "\n".join([f"{i}. {hit}" for i,hit in enumerate(hits)])
-#     QUERY_PROMPT = "User Query (Multiple Choice):\n" + query + "\n"
-#     return SYSTEM_PROMPT, RAG_PROMPT + "\n" + QUERY_PROMPT
-
 def MEMORIZE_PROMPT(MEMORY_CONTEXT, EGO=True, SCREEN_SHOT=False, REFER_CONTEXT=True):
     SYSTEM_PROMPT = ""
 
@@ -123,13 +58,14 @@ def SCREEN_SHOOTING(clip, summary, TIMESPAN, START_NATURAL):
     STARTSTAMP_seconds_natural += int(START_NATURAL.split("_")[1].split(":")[0]) * 3600 + int(START_NATURAL.split("_")[1].split(":")[1]) * 60 + int(START_NATURAL.split("_")[1].split(":")[2])
     
     for match in re.finditer(r"<frame>(\d+)%<description>(.*?)</description></frame>", summary):
-        percentage = max(int(match.group(1)), 90)
+        percentage = min(int(match.group(1)), 95)
         description = match.group(2)
 
         STAMP_seconds_natural = STARTSTAMP_seconds_natural + duration * (percentage / 100.0)
         timestring = f"Day{1+int(STAMP_seconds_natural // 86400)}_{int((STAMP_seconds_natural % 86400) // 3600):02d}:{int((STAMP_seconds_natural % 3600) // 60):02d}:{int(STAMP_seconds_natural % 60):02d}"
         # Extract frame using moviepy
         # video = moviepy.editor.VideoFileClip(clip.video_path)
+        
         frame = clip.get_frame(duration * (percentage / 100.0))
         # Save or process the frame as needed
         # For example, save the frame as an image file

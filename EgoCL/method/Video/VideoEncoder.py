@@ -12,13 +12,18 @@ class VideoEncoder:
 class Qwen3VLEmbedder(VideoEncoder):
     def __init__(self, ENCODER_PATH):
         super().__init__(ENCODER_PATH)
-        from models.qwen3_vl_embedding import Qwen3VLEmbedder
-        self.model = Qwen3VLEmbedder(model_name_or_path=ENCODER_PATH)
+        self.online = not os.path.exists(ENCODER_PATH)
+        if not self.online:
+            from models.qwen3_vl_embedding import Qwen3VLEmbedder
+            self.model = Qwen3VLEmbedder(model_name_or_path=ENCODER_PATH)
 
     def call(self, *args, **kwargs):
-        result = self.model.process(*args, **kwargs)
-        if hasattr(result, "detach"):
-            result = result.detach().cpu().numpy()
+        if self.online:
+            from MyLm import call
+            return np.array(call(self.ENCODER_PATH, {"content": args[0]}))
+        else:
+            result = self.model.process(*args, **kwargs)
+        if hasattr(result, "detach"): result = result.detach().cpu().numpy()
         return result
 
     def __call__(self, query):
@@ -48,11 +53,20 @@ class Qwen3VLEmbedder(VideoEncoder):
 class SentenceTransformerEncoder(VideoEncoder):
     def __init__(self, ENCODER_PATH):
         super().__init__(ENCODER_PATH)
-        from sentence_transformers import SentenceTransformer
-        self.model = SentenceTransformer(ENCODER_PATH)
+        self.online = not os.path.exists(ENCODER_PATH)
+        if not self.online:
+            from sentence_transformers import SentenceTransformer
+            self.model = SentenceTransformer(ENCODER_PATH)
+        else:
+            from sentence_transformers import SimilarityFunction
+            self.cosine = SimilarityFunction.to_similarity_fn("cosine")
 
     def call(self, *args, **kwargs):
-        return self.model.encode(*args, **kwargs)
+        if self.online:
+            from MyLm import call
+            return np.array(call(self.ENCODER_PATH, {"content":args[0]}))
+        else:
+            return self.model.encode(*args, **kwargs)
 
     def __call__(self, query):
         if isinstance(query, str):
@@ -68,7 +82,10 @@ class SentenceTransformerEncoder(VideoEncoder):
 
     def sim(self, query, document):
         query_embeddings, document_embeddings = self(query), self(document)
-        return self.model.similarity(query_embeddings, document_embeddings)
+        if self.online:
+            return self.cosine(query_embeddings, document_embeddings)
+        else:
+            return self.model.similarity(query_embeddings, document_embeddings)
     
 def VideoEncoderFactory(name):
     n = os.path.basename(name).lower()

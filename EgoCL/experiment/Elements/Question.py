@@ -132,6 +132,10 @@ class Question:
         return self.QUESTIONS.ENCODER
 
     @property
+    def I_Dont_Know(self):
+        return self.QUESTIONS.I_Dont_Know if hasattr(self.QUESTIONS, "I_Dont_Know") else False
+
+    @property
     def file_name(self):
         from EgoCL.paths import RESULTS_FILE
         return RESULTS_FILE(self)
@@ -167,19 +171,16 @@ class Question:
 
         self.evaluate()
 
-        return
-
-
-
-        if self.mode == "normal":
-            self.response = response
-            self.evaluate()
-        else:  #strong mode
-            self.open_ended = response
-            from .. import CHOOSER_PROMPT
-            full_prompt = CHOOSER_PROMPT + f"\nQuestion: {self.question}\nOpen-ended Answer: {self.open_ended}\nChoices: " + " ".join([chr(65+i) + ". " + str(option) for i, option in enumerate(self.choices)]) + "\nYour Answer:"
-            self.response = self.METHOD.VlmBase({"content":[{"text": full_prompt}]})
-            self.evaluate()
+        # return
+        # if self.mode == "normal":
+        #     self.response = response
+        #     self.evaluate()
+        # else:  #strong mode
+        #     self.open_ended = response
+        #     from .. import CHOOSER_PROMPT
+        #     full_prompt = CHOOSER_PROMPT + f"\nQuestion: {self.question}\nOpen-ended Answer: {self.open_ended}\nChoices: " + " ".join([chr(65+i) + ". " + str(option) for i, option in enumerate(self.choices)]) + "\nYour Answer:"
+        #     self.response = self.METHOD.VlmBase({"content":[{"text": full_prompt}]})
+        #     self.evaluate()
     
     def __cache_video(self, clip, start_s, end_s, caching_video=True):
         import os
@@ -238,6 +239,10 @@ class Question:
         return {'video_path': video_path, 'transcript': self.transform_transcripts(transcript)}
 
     def evaluate(self):
+        if self.I_Dont_Know:
+            self.score = {}
+            return
+
         if self.option and self.response is not None:
             self.score["option"] = int(str(self.answer)[:1].lower() == str(self.response)[:1].lower())*1.0  #compare the first character only
         
@@ -302,9 +307,9 @@ class Questions:
         question.QUESTIONS = self
         return self
 
-    # @property
-    # def mode(self):
-    #     return self.EXECUTION.mode
+    @property
+    def I_Dont_Know(self):
+        return self.EXECUTION.I_Dont_Know if hasattr(self.EXECUTION, "I_Dont_Know") else False
 
     def call(self, *args, **kwargs):
         return self.EXECUTION.call(*args, **kwargs)
@@ -383,7 +388,7 @@ class Questions:
 
     def short_report(self, TIME):
         scores = [q.score for q in self.QUESTIONS if abs(q.TIME.seconds_experience - TIME.seconds_experience)< self.EXECUTION.METHOD.atom_s * 1.1 and q.score is not None]
-        return f"At TIME {TIME.seconds_experience}s, {len(scores)} questions evaluated, Average Score: {sum([s["option"] for s in scores])/len(scores) if len(scores)>0 else 'N/A'}"
+        return f"At TIME {TIME.seconds_experience}s, {len(scores)} questions evaluated, Average Score: {sum([s['option'] for s in scores])/len(scores) if len(scores)>0 and 'option' in scores[0] else 'N/A'}"
     
     def __iter__(self):
         return iter(self.QUESTIONS)

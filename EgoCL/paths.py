@@ -23,7 +23,8 @@ W_ROOT = opj("/mnt", "data", "yl", "W")
 EgoCL_ROOT = opj(W_ROOT, "EgoCL")
 
 EPRC_ROOT = opj(EgoCL_ROOT, "Experience")
-
+DATAS_ROOT = opj(EgoCL_ROOT, "Numbers")
+VIS_ROOT = opj(EgoCL_ROOT, "Visualize")
 
 #Method:
 

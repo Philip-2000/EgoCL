@@ -21,4 +21,11 @@ class AnswerExperiment:
         A = Answering(name=self.ANSWERING, EXPERIENCE=E, q_list=self.q_list, encode_only=self.encode_only, EXPERIMENT=self, **self.answer_config.get("EXECUTION_KWARGS", {}))
         
         A.METHOD = getattr(__import__("EgoCL.method", fromlist=[self.METHOD]), self.METHOD)(E, EXECUTION=A, EXPERIMENT=self, **self.answer_config.get("METHOD_KWARGS", {}))
+        self.ANSWERING = A
+        self.METHOD = A.METHOD
+        self.EXPERIENCE = E
         A()
+    
+    @property
+    def MEMORY(self):
+        return self.METHOD.MEMORY

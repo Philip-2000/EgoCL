@@ -1,0 +1,55 @@
+EGO: true
+EXECUTION: benches
+EXECUTION_KWARGS:
+  ENCODER_PATH: Qwen3-Embed-0.6B
+  MODEL: Qwen3-VL-8B-Instruct:a
+  N: 2
+  OPTIONAL: true
+  SAMPLES: 1
+  TEXT: Qwen3-Ours
+  ckpt: new
+  load_style: FORCE_LOAD
+  load_style_questions: FORCE_LOAD
+  option: true
+  strong: true
+EXPERIENCE: EgoSchema_2f192c07-9e89-40d6-bc8c-418e92563bd9
+METHOD: VideoMethod
+METHOD_KWARGS:
+  ENCODER_PATH: Qwen3-VL-Embedding-2B
+  FPS: 4
+  I_Cant_See: false
+  I_Dont_Know: true
+  MODEL: Qwen3-VL-8B-Instruct:a
+  Refer_Context: false
+  Respond_Cant_See: false
+  SCREEN_SHOT: true
+  TEXT: Qwen3-Ours
+  VideoBufferSize: 1024
+  atom_s: 30
+  cover: true
+  encodes:
+    load_force: false
+    load_not: true
+    pre: true
+    save: true
+  entire: false
+  length: 4
+  num_segments: 30
+  search_field:
+    screenshot: true
+    summary: true
+    transcript: true
+  strategy:
+    clip:
+      summarize: Concat
+    memory:
+      adjust: None
+      split: None
+    segment:
+      adjust: None
+      split: Force
+      summarize: Empty
+  top_k: 6
+  width: 540
+input_name: NoCon
+name: NoCon

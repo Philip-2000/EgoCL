@@ -1,0 +1,41 @@
+\begin{table}[htbp]
+    \centering
+    \fontsize{7}{10}\selectfont
+    \setlength{\tabcolsep}{6pt} % 调整列间距
+    \renewcommand{\arraystretch}{1.4} % 调整行高
+    \centering
+    \begin{tabular}{r|p{0.5cm}<{\centering}p{0.5cm}<{\centering}p{0.5cm}<{\centering}|p{0.5cm}<{\centering}p{0.5cm}<{\centering}p{0.5cm}<{\centering}|p{0.5cm}<{\centering}p{0.5cm}<{\centering}p{0.5cm}<{\centering}}
+        \textbf{Benchmark} &
+            \multicolumn{3}{c|}{\fontsize{10}{12}\selectfont Egoschema} &
+            \multicolumn{3}{c|}{\fontsize{10}{12}\selectfont EgoLifeQA} &
+            \multicolumn{3}{c}{\fontsize{10}{12}\selectfont EgoR1Bench}\\ \hline \hline
+        \textbf{Metric}
+        & $\overline{\alpha^c}$ & $\overline{\alpha^e_E}$ & $\overline{\eta^{\mathcal{M}}_{\mathcal{V}}}$
+        & $\overline{\alpha^c}$ & $\overline{\alpha^e_E}$ & $\overline{\eta^{\mathcal{M}}_{\mathcal{V}}}$
+        & $\overline{\alpha^c}$ & $\overline{\alpha^e_E}$ & $\overline{\eta^{\mathcal{M}}_{\mathcal{V}}}$
+        \\
+        Unit 
+        & \% & \% & --
+        & \% & \% & --
+        & \% & \% & --
+        \\  \hline
+        $\mu$=8, k=6     &                          &                          &                          &                          &                          &                          &                          &                          &                          \\
+        EgoVidMem        & 88.6                     & 74.2                     & .050                     & 55.0                     & 34.2                     & .070                     & 59.0                     & 38.7                     & .063                     \\ \hline
+        w/o Images       & -0.6                     & -0.4                     & -.05\cellcolor{first!60} & -8.2                     & -3.6                     & -.07\cellcolor{first!60} & -9.7                     & -14.\cellcolor{second!60}& -.06\cellcolor{first!60} \\ 
+        w/o Summary      & -60.\cellcolor{first!60} & -55.\cellcolor{first!60} & -0.0                     & -8.6                     & -5.4\cellcolor{third!60} & -0.0                     & -10.                     & -10.                     & -0.0                     \\ 
+        w/o Transcripts  & -0.0                     & -0.0                     & -0.0                     & -27.\cellcolor{first!60} & -12.\cellcolor{first!60} & -0.0                     & -28.\cellcolor{first!60} & -18.\cellcolor{first!60} & -0.0                     \\ \hline
+        w/o Context      & -8.2\cellcolor{second!60}& -4.4                     & -.01                     & -9.4\cellcolor{second!60}& -0.4                     & -0.0                     & -19.\cellcolor{second!60}& -8.7                     & -0.0                     \\ \hline
+        k=4              & -1.8                     & -6.2\cellcolor{third!60} & -0.0                     & -2.6                     & -4.0                     & -0.0                     & -8.7                     & -8.3                     & -0.0                     \\ 
+        k=2              & -1.6                     & -7.6\cellcolor{second!60}& -0.0                     & -5.0                     & -3.4                     & -0.0                     & -11.                     & -11.                     & -0.0                     \\ \hline
+        $\mu$=8          & -0.0                     & -0.0                     & -0.0                     & -8.2                     & -2.2                     & -0.0                     & -2.7                     & -10.                     & -0.0                     \\
+        $\mu$=12         & -0.0                     & -0.0                     & -0.0                     & -8.8\cellcolor{third!60} & -8.6\cellcolor{second!60}& -0.0                     & -12.\cellcolor{third!60} & -13.\cellcolor{third!60} & -0.0                     \\ \hline
+        Text Encoder     & -2.6\cellcolor{third!60} & +0.8                     & -.05\cellcolor{first!60} & -8.4                     & -3.6                     & -.07\cellcolor{first!60} & -9.2                     & -12.                     & -.06\cellcolor{first!60} \\ \hline
+    \end{tabular}
+    \caption{
+        Ablation studies on the EgoVidMem's hyper parameters and its memory unit components. 
+        The results are reported as the change in performance compared to the first row, with color shaded to highlight the three most significant drops in performance, similar to Table~\ref{tab:exp_acc}.
+        Besides the clarified modification in the first column, all the other settings are consistent with the basic version of EgoVidMem.
+        The basic version of EgoVidMem (first row) is evaluated with $\mu$=8 and k=6. Its encoder is Qwen3 VL Embedding 8B, while the last row 'text encoder' utilized Qwen3 8B.
+    }
+    \label{tab:ablation}
+\end{table}

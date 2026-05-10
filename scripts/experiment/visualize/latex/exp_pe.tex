@@ -1,0 +1,58 @@
+\begin{table}[htbp]
+    \centering
+    \fontsize{7}{10}\selectfont
+    % \scriptsize
+    \setlength{\tabcolsep}{6pt}
+    \renewcommand{\arraystretch}{1.4}
+    \begin{tabular}{r|p{0.4cm}<{\centering}p{0.4cm}<{\centering}p{0.4cm}<{\centering}p{0.4cm}<{\centering}|p{0.4cm}<{\centering}p{0.4cm}<{\centering}p{0.4cm}<{\centering}p{0.4cm}<{\centering}|p{0.4cm}<{\centering}p{0.4cm}<{\centering}p{0.4cm}<{\centering}p{0.4cm}<{\centering}}
+        \textbf{Benchmark} &
+            \multicolumn{4}{c|}{\fontsize{9}{12}\selectfont Egoschema} &
+            \multicolumn{4}{c|}{\fontsize{9}{12}\selectfont EgoLifeQA} &
+            \multicolumn{4}{c}{\fontsize{9}{12}\selectfont EgoR1Bench}\\ \hline \hline
+        \textbf{Metric} 
+        & $\overline{\delta}$ & $\overline{\delta_\tau}$ & $\overline{\delta^m_\tau}$ & $\overline{\eta^{\mathcal{M}}_{\mathcal{V}}}$
+        & $\overline{\delta}$ & $\overline{\delta_\tau}$ & $\overline{\delta^m_\tau}$ & $\overline{\eta^{\mathcal{M}}_{\mathcal{V}}}$
+        & $\overline{\delta}$ & $\overline{\delta_\tau}$ & $\overline{\delta^m_\tau}$ & $\overline{\eta^{\mathcal{M}}_{\mathcal{V}}}$
+        \\
+        Unit 
+        & \multicolumn{3}{c}{s$\quad \times10^{-1} \quad $ --} & --
+        & \multicolumn{3}{c}{s$\quad \times10^{-4} \quad $ --} & --
+        & \multicolumn{3}{c}{s$\quad \times10^{-4} \quad $ --} & --
+        \\
+        \hline
+        EgoButler(7B)~\cite{yang2025EgoLife}
+        & 2.16\cellcolor{first!60} & .120\cellcolor{first!60} & .333\cellcolor{first!60}  & .021\cellcolor{first!60}
+        & 1.71\cellcolor{first!60} & .672\cellcolor{first!60} & .192\cellcolor{second!60} & .001\cellcolor{first!60}
+        & 2.06\cellcolor{first!60} & .161\cellcolor{first!60} & .170\cellcolor{second!60} & .001\cellcolor{first!60}
+        \\
+        Ego-R1(3B)$^{\dag}$~\cite{tian2025EgoR1}
+        & 21.6 & 1.31 & --- & 1.04
+        & 33.8\cellcolor{third!60} & 16.0\cellcolor{third!60} & --- & 1.02
+        & 28.6\cellcolor{third!60} & 16.1\cellcolor{third!60} & --- & 1.02
+        \\
+        M3Agent(70B)~\cite{long2025M3Agent}
+        & 34.9 & 1.93 & .510 & .135\cellcolor{third!60}
+        & 86.9 & 34.2 & 2.55 & .017\cellcolor{second!60}
+        & 79.6 & 56.0 & 2.56 & .015\cellcolor{second!60}
+        \\
+        HippoMM(*)$^{\dag}$~\cite{lin2025HippoMM}
+        & 14.4\cellcolor{third!60} & .800\cellcolor{third!60} & .396\cellcolor{third!60} & 1.85
+        & 134. & 52.8 & .049\cellcolor{first!60} & 1.23
+        & 85.2 & 33.6 & .049\cellcolor{first!60} & 1.25
+        \\
+        EgoVidMem(*)
+        & 6.03\cellcolor{second!60} & .335\cellcolor{second!60} & .362\cellcolor{second!60} & .048\cellcolor{second!60}
+        & 16.3\cellcolor{second!60} & 7.73\cellcolor{second!60} & .381\cellcolor{third!60} & .070\cellcolor{third!60}
+        & 12.8\cellcolor{second!60} & 5.36\cellcolor{second!60} & .341\cellcolor{third!60} & .063\cellcolor{third!60}
+        \\
+        \hline
+    \end{tabular}
+    \caption{
+        Efficiency performance of five memorizing frameworks on three egocentric benchmarks.
+        % Same as Table~\ref{tab:exp_acc}, the three best values are shaded.
+        The $\dag$ symbol indicates that these method requires the original video as input, as a result, their compression rate $\overline{\eta^{\mathcal{M}}_{\mathcal{V}}}$ are larger than 1.0.
+        The hierachical rag construction process of Ego-R1 is not provided, so we cannot calculate $\overline{\delta^m_\tau}$ for it.
+        Considering the long duration of the original video, we also shift the unit of $\overline{\delta_\tau}$ by $\times10^{-1}$ for EgoSchema and $\times10^{-4}$ for the others to make the values more readable.
+    }
+    \label{tab:exp_per}
+\end{table}

@@ -1,5 +1,5 @@
 name: testing
-input_name: default
+input_name: testing
 EGO: true # false #
 METHOD: VideoMethod #DumpMethod #
 EXECUTION_KWARGS:
@@ -37,16 +37,17 @@ METHOD_KWARGS:
   
   SCREEN_SHOT: True
   
-  MODEL: "Qwen2.5-VL-7B-Instruct"
+  MODEL: "Qwen3-VL-8B-Instruct"
   TEXT: "Qwen3-Ours" # "Qwen3-32B" # "Qwen2.5-VL-7B-Instruct" #
-  ENCODER_PATH: "/mnt/data/models/Qwen3-VL-Embedding-2B" # "/mnt/data/models/Qwen3-Embedding-0.6B" #  #path to the text encoder model
+  # ENCODER_PATH: "Qwen3-VL-Embedding-2B" # "/mnt/data/models/Qwen3-VL-Embedding-2B" #  path to the text encoder model
+  ENCODER_PATH: "Qwen3-Embed-0.6B" # "/mnt/data/models/Qwen3-Embedding-0.6B" # 
   entire: False      #whether to use the entire video for question answering
   length: 5
   top_k: 4
 
   search_field:
     transcript: False
-    screenshot_path: True
+    screenshot: True
     summary: True
 
   encodes:
@@ -56,5 +57,5 @@ METHOD_KWARGS:
     load_not: True   #for both False case, it's most flexible
 
   cover: True
-  I_Dont_Know: False  #for debugging, to shortcut question answering when the such calling is slow
+  I_Dont_Know: True  #for debugging, to shortcut question answering when the such calling is slow
   Respond_Cant_See: False

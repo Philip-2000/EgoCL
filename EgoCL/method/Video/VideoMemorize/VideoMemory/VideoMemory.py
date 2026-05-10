@@ -539,7 +539,7 @@ class VideoMemory(Memory):
             import os
             exp_mem_path = opj(MEMORY_ROOT, self.EXPERIENCE.name, self.METHOD.name)
             os.makedirs(exp_mem_path, exist_ok=True)
-            available_times = [int(name) for name in os.listdir(exp_mem_path) if name.isdigit()]
+            available_times = [int(name) for name in os.listdir(exp_mem_path) if name.isdigit() and os.path.exists(opj(exp_mem_path, name, f"{experiment_name if experiment_name is not None else self.EXPERIMENT.name}_memory.json"))]
             if len(available_times) == 0:
                 return None
             seconds_experience = max(available_times)
@@ -595,7 +595,7 @@ class VideoMemory(Memory):
         if self.encodes_config['pre']:
             import time
             start_time = time.time()
-            self.ENCODINGS.append_atom(atom, len(self.VIDEO_MEM_SEGMENTS[-1].VIDEO_MEM_CLIPS)-1, force_encoding=True)
+            self.ENCODINGS.append_atom(atom, len(self.VIDEO_MEM_SEGMENTS[-1].VIDEO_MEM_CLIPS)-1, force_encoding=False)
             self.encode_time += time.time() - start_time
         self.organize()
 

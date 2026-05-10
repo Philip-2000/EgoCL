@@ -1,0 +1,25 @@
+\documentclass{article}%
+\usepackage[T1]{fontenc}%
+\usepackage[utf8]{inputenc}%
+\usepackage{lmodern}%
+\usepackage{textcomp}%
+\usepackage{lastpage}%
+%
+%
+%
+\begin{document}%
+\normalsize%
+\begin{tabular}{lcc}%
+Method \textbackslash{} Benchmark&EgoLifeQA&EgoR1Bench\\%
+\hline%
+LongVA{-}7B{-}DPO&25.00\textbackslash{}\%&9.38\textbackslash{}\%\\%
+InternVideo2.5{-}Chat{-}8B&21.88\textbackslash{}\%&25.00\textbackslash{}\%\\%
+Qwen2.5{-}VL{-}7B{-}Instruct&29.60\textbackslash{}\%&34.67\textbackslash{}\%\\%
+InternVL3\_5{-}8B&33.80\textbackslash{}\%&36.67\textbackslash{}\%\\%
+Qwen3{-}VL{-}8B{-}Instruct&36.00\textbackslash{}\%&33.67\textbackslash{}\%\\%
+LLaVA{-}Video{-}7B{-}Qwen2&35.40\textbackslash{}\%&41.00\textbackslash{}\%\\%
+llava{-}onevision{-}qwen2{-}7b{-}ov&38.00\textbackslash{}\%&41.67\textbackslash{}\%\\%
+EgoGPT{-}7b{-}EgoIT{-}EgoLife&37.50\textbackslash{}\%&21.88\textbackslash{}\%\\%
+default&52.31\textbackslash{}\%&67.21\textbackslash{}\%\\%
+\end{tabular}%
+\end{document}

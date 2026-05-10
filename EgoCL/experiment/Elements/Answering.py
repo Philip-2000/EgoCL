@@ -19,10 +19,11 @@ class Answering:
         
         self.load()
 
-        self.ENCODER = None
+        self._ENCODER = None
         self.ENCODER_PATH = kwargs.get("ENCODER_PATH", None)
         self.MODEL = kwargs.get("MODEL", "Qwen3-VL-8B-Instruct") 
         self.TEXT = kwargs.get("TEXT", "Qwen3-Ours")
+        self.overwrite = kwargs.get("overwrite", False)
 
     def call(self, *args, **kwargs):
         from MyLm import call
@@ -32,18 +33,21 @@ class Answering:
         from MyLm import call
         return call(self.TEXT, *args, **kwargs)
 
-    def encode(self, s):
+    @property
+    def ENCODER(self):
         if hasattr(self.METHOD, "ENCODER") and self.METHOD.ENCODER is not None and self.METHOD.ENCODER_PATH is not None and self.ENCODER_PATH == self.METHOD.ENCODER_PATH: #prefer to use the method's encoder
-            self.ENCODER = self.METHOD.ENCODER
-            return self.METHOD.ENCODER.encode(s)
-        elif self.ENCODER is not None:
-            return self.ENCODER.encode(s)
-        elif self.ENCODER_PATH is not None:
-            from sentence_transformers import SentenceTransformer
-            self.ENCODER = SentenceTransformer(self.ENCODER_PATH)
-            return self.ENCODER.encode(s)
+            self._ENCODER = self.METHOD.ENCODER
+        elif self._ENCODER is not None:
+            return self._ENCODER
+        elif self._ENCODER is None and self.ENCODER_PATH is not None:
+            from ... import VideoEncoderFactory
+            self._ENCODER = VideoEncoderFactory(self.ENCODER_PATH)
         else:
             raise ValueError("No ENCODER is set in Execution.")
+        return self._ENCODER
+
+    def encode(self, s):
+        return self.ENCODER(s)
 
     @property
     def file_name(self):
@@ -107,24 +111,60 @@ class Answering:
         import os
         
         for q in [q for q in self.QUESTIONS if (self.q_list == "all") or (q.QID in self.q_list)]:
-            ts6d = "%06d" % (min([int(ts) for ts in os.listdir(MEMORY_DIR(self.EXPERIENCE.name, self.METHOD)) if str(ts).isdigit() and int(ts) >= q.TIME.seconds_experience-1.0 ]) )
+            # ts6d = "%06d" % (min([int(ts) for ts in os.listdir(MEMORY_DIR(self.EXPERIENCE.name, self.METHOD)) if str(ts).isdigit() and int(ts) >= q.TIME.seconds_experience-1.0 ]) )
+            # # print(q.file_name, "q.file_name", ts6d, "ts6d")
+            # if os.path.exists((q.file_name).replace("000000", ts6d)) and not self.overwrite:
+            #     YOG.info(f"Question ID: {q.QID} at TIME: {q.TIME.seconds_experience}s already exists at {(q.file_name).replace('000000', ts6d)}, skipping. Set --overwrite to overwrite it.")
+            #     continue
+            # if self.encode_only: k, self.encodes_config['load_not'] = self.encodes_config['load_not'], True
+            # self.EXPERIMENT.name, p = self.EXPERIMENT.input_name, self.EXPERIMENT.name
+            # self.RESPOND.load(ts6d)
+            # self.METHOD.TIME.seconds_experience = int(ts6d)
+            # self.EXPERIMENT.name = p
+            # if self.encode_only: self.encodes_config['load_not'] = k
             
-            if self.encode_only: k, self.encodes_config['load_not'] = self.encodes_config['load_not'], True
-            self.EXPERIMENT.name, p = self.EXPERIMENT.input_name, self.EXPERIMENT.name
-            self.RESPOND.load(ts6d)
-            self.METHOD.TIME.seconds_experience = int(ts6d)
-            self.EXPERIMENT.name = p
-            if self.encode_only: self.encodes_config['load_not'] = k
+            # if self.encode_only:
+            #     YOG.info(f"Encoded Question ID: {q.QID} at TIME: {q.TIME.seconds_experience}s, skipped responding as encode_only is set. file_name for encodes: {self.ENCODINGS.file_name}")
+            #     if not os.path.exists(self.ENCODINGS.file_name):
+            #         self.ENCODINGS.encode_all()
+            #         self.ENCODINGS.save()
+            #     else:
+            #         self.ENCODINGS.load(None)
+            #     continue
+            # q.respond(self.METHOD.query(q.query,opt=True) if self.option else None, self.METHOD.query(q.question,opt=False) if self.strong else None)
             
-            if self.encode_only:
-                YOG.info(f"Encoded Question ID: {q.QID} at TIME: {q.TIME.seconds_experience}s, skipped responding as encode_only is set.")
-                if not os.path.exists(self.ENCODINGS.file_name):
-                    self.ENCODINGS.encode_all()
-                    self.ENCODINGS.save()
-                continue
-            q.respond(self.METHOD.query(q.query,opt=True) if self.option else None, self.METHOD.query(q.question,opt=False) if self.strong else None)
-            
-            q.save_res(caching_video=True)
+            # q.save_res(caching_video=True)
 
-            if self.encodes_config["save"]: self.ENCODINGS.save()
-            YOG.info(f"Processed Question ID: {q.QID} at TIME: {q.TIME.seconds_experience}s, saved at {q.file_name}.")
+            # if self.encodes_config["save"]: self.ENCODINGS.save()
+            # YOG.info(f"Processed Question ID: {q.QID} at TIME: {q.TIME.seconds_experience}s, saved at {q.file_name}.")
+            # return
+        
+            try:
+                ts6d = "%06d" % (min([int(ts) for ts in os.listdir(MEMORY_DIR(self.EXPERIENCE.name, self.METHOD)) if str(ts).isdigit() and int(ts) >= q.TIME.seconds_experience-1.0 ]) )
+                # print(q.file_name, "q.file_name", ts6d, "ts6d")
+                if os.path.exists((q.file_name).replace("000000", ts6d)) and not self.overwrite:
+                    YOG.info(f"Question ID: {q.QID} at TIME: {q.TIME.seconds_experience}s already exists at {(q.file_name).replace('000000', ts6d)}, skipping. Set --overwrite to overwrite it.")
+                    continue
+                if self.encode_only: k, self.encodes_config['load_not'] = self.encodes_config['load_not'], True
+                self.EXPERIMENT.name, p = self.EXPERIMENT.input_name, self.EXPERIMENT.name
+                self.RESPOND.load(ts6d)
+                self.METHOD.TIME.seconds_experience = int(ts6d)
+                self.EXPERIMENT.name = p
+                if self.encode_only: self.encodes_config['load_not'] = k
+                
+                if self.encode_only:
+                    YOG.info(f"Encoded Question ID: {q.QID} at TIME: {q.TIME.seconds_experience}s, skipped responding as encode_only is set. file_name for encodes: {self.ENCODINGS.file_name}")
+                    if not os.path.exists(self.ENCODINGS.file_name):
+                        self.ENCODINGS.encode_all()
+                        self.ENCODINGS.save()
+                    else:
+                        self.ENCODINGS.load(None)
+                    continue
+                q.respond(self.METHOD.query(q.query,opt=True) if self.option else None, self.METHOD.query(q.question,opt=False) if self.strong else None)
+                
+                q.save_res(caching_video=True)
+
+                if self.encodes_config["save"]: self.ENCODINGS.save()
+                YOG.info(f"Processed Question ID: {q.QID} at TIME: {q.TIME.seconds_experience}s, saved at {q.file_name}.")
+            except Exception as e:
+                YOG.info(f"Error processing Question ID: {q.QID} at TIME: {q.TIME.seconds_experience}s. Error: {e}")

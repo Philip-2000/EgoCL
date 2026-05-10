@@ -44,20 +44,7 @@ class VideoRespond(Respond):
         from . import VideoRetrieve
         self.name = "VideoRespond"
         self.METHOD = METHOD
-        # self.OPTIONAL = METHOD.EXECUTION.OPTIONAL if METHOD.EXECUTION is not None else False
-        # if OPTIONAL:
-        #     if not self.EXPERIENCE.EGO:
-        #         from .. import RESPOND_PROMPT_SIMPLE_OPTIONAL as RESPOND_PROMPT
-        #     else:
-        #         from .. import RESPOND_PROMPT_OPTIONAL as RESPOND_PROMPT
-        # else:
-        #     if not self.EXPERIENCE.EGO:
-        #         from .. import RESPOND_PROMPT_SIMPLE as RESPOND_PROMPT
-        #     else:
-        #         from .. import RESPOND_PROMPT as RESPOND_PROMPT
-        # from functools import partial
-        # from .. import RESPOND_PROMPT
-        self.RESPOND_PROMPT = None #partial(RESPOND_PROMPT, EGO=self.EXPERIENCE.EGO, OPTIONAL=self.option)
+        self.RESPOND_PROMPT = None 
         YOG.info(("option ", self.option, "strong", self.strong, " EGO ", self.EXPERIENCE.EGO, " VLM Model ", kwargs.get("MODEL", "Qwen3-VL-8B-Instruct")))
         
         # from .. import RAG_PROMPT
@@ -119,27 +106,28 @@ class VideoRespond(Respond):
         self.RETRIEVE.load(seconds_experience)
     
     def __call__(self, query, image=None, opt=True):
-        # if self.I_Dont_Know: return "I don't know based on the provided memories."
-        # import json
-        # hits = json.dumps(self.RETRIEVE(query), ensure_ascii=False)
-        
-        from functools import partial
-        from .. import RESPOND_PROMPT
         import time
         start_time = time.time()
-        # hits = self.RETRIEVE(query) #hits is a list of strings
-        if self.Respond_Cant_See:
-            hits = self.RETRIEVE(query, image=None) #HITS is a list of stringsr
+        if self.I_Dont_Know:
+            result = "The responding process is disabled because I_Dont_Know is set to True. This is for saving space (of ENCODER) for LLMs. If you want to enable responding, please set I_Dont_Know to False."
+            hits = []
         else:
-            hits = self.RETRIEVE(query, image=image) #HITS is a list of stringsr
-        # print("hits", hits)
-        YOG.debug(("VideoRespond Optional Hits: ", hits), tag="VideoRespond")
+            from functools import partial
+            from .. import RESPOND_PROMPT
+            # hits = self.RETRIEVE(query) #hits is a list of strings
+            if self.Respond_Cant_See:
+                hits = self.RETRIEVE(query, image=None) #HITS is a list of stringsr
+            else:
+                hits = self.RETRIEVE(query, image=image) #HITS is a list of stringsr
+            # print("hits", hits)
+            YOG.debug(("VideoRespond Optional Hits: ", hits), tag="VideoRespond")
+            
+            self.RESPOND_PROMPT = partial(RESPOND_PROMPT, EGO=self.EXPERIENCE.EGO, OPTIONAL=opt)
         
-        self.RESPOND_PROMPT = partial(RESPOND_PROMPT, EGO=self.EXPERIENCE.EGO, OPTIONAL=opt)
-    
-        SYSTEM_PROMPT, USER_PROMPT = self.RESPOND_PROMPT(hits, query)
-        result = self.tall({"content":[{"system": SYSTEM_PROMPT}, {"user": USER_PROMPT}]})
+            SYSTEM_PROMPT, USER_PROMPT = self.RESPOND_PROMPT(hits, query)
+            result = self.tall({"content":[{"system": SYSTEM_PROMPT}, {"user": USER_PROMPT}]})
         delay_s = time.time() - start_time
+        # print("delay_s", delay_s)
         delay_rate = delay_s / max(1.0, self.TIME.seconds_experience)
         memorize_rate = self.MEMORY.MemorizeTime / max(1.0, self.TIME.seconds_experience)
 

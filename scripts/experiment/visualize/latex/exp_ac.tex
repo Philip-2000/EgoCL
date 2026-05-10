@@ -1,0 +1,51 @@
+\begin{table}[htbp]
+    \centering
+    \fontsize{7}{10}\selectfont
+    % \scriptsize
+    \setlength{\tabcolsep}{6pt} % 调整列间距
+    \renewcommand{\arraystretch}{1.4} % 调整行高
+    \centering
+    \begin{tabular}{r|p{0.3cm}<{\centering}p{0.3cm}<{\centering}p{0.3cm}<{\centering}p{0.35cm}<{\centering}|p{0.3cm}<{\centering}p{0.3cm}<{\centering}p{0.3cm}<{\centering}p{0.35cm}<{\centering}|p{0.3cm}<{\centering}p{0.3cm}<{\centering}p{0.3cm}<{\centering}p{0.35cm}<{\centering}}
+        \textbf{Benchmark} &
+            \multicolumn{4}{c|}{\fontsize{9}{12}\selectfont Egoschema} &
+            \multicolumn{4}{c|}{\fontsize{9}{12}\selectfont EgoLifeQA} &
+            \multicolumn{4}{c}{\fontsize{9}{12}\selectfont EgoR1Bench}\\ \hline \hline
+        \textbf{Metric} 
+        & $\overline{\alpha^c}$ & $\overline{\alpha^e_E}$ & $\overline{\theta^e}$ & $\overline{\alpha^e_J}$
+        & $\overline{\alpha^c}$ & $\overline{\alpha^e_E}$ & $\overline{\theta^e}$ & $\overline{\alpha^e_J}$
+        & $\overline{\alpha^c}$ & $\overline{\alpha^e_E}$ & $\overline{\theta^e}$ & $\overline{\alpha^e_J}$
+        \\
+        Unit 
+        & \% & \% & -- & \%
+        & \% & \% & -- & \%
+        & \% & \% & -- & \%
+        \\  \hline
+        %\textit{Open Source Models} & & & & & & & & & & \\
+        Qwen3VL(32B)~\cite{yang2025Qwen3}               & 68.4                     & 59.2                     & .608                     & 51.8\cellcolor{second!60}    & 36.4\cellcolor{third!60}  & 23.8                     & .312                     &  29.8\cellcolor{second!60}& 33.7                     & 23.3                     & .325                     & 28.0\cellcolor{second!60}\\
+        Qwen2.5VL(72B)~\cite{qwen2025Qwen25}            & 72.8                     & 59.8\cellcolor{third!60} & .608                     & 44.4\cellcolor{third!60}     & 29.6                      & 24.8                     & .275                     &  9.60                     & 34.7                     & 24.0                     & .287                     & 21.0                     \\
+        LLaVA-Video(72B)~\cite{zhang2025LLaVAVideo}     & 74.0                     & 55.0                     & .689\cellcolor{third!60} & 38.0                         & 35.4                      & 21.2                     & .599\cellcolor{second!60}&  6.80                     & 41.0\cellcolor{third!60} & 19.7                     & .578\cellcolor{first!60} & 17.3                     \\
+        LLaVA-OV(72B)~\cite{li2024LLaVAOneVision}       & 66.0                     & 49.2                     & .673                     & 37.2                         & 38.0\cellcolor{second!60} & 25.2                     & .606\cellcolor{first!60} &  8.80                     & 41.7\cellcolor{second!60}& 26.0\cellcolor{third!60} & .578\cellcolor{second!60}& 18.7                     \\
+        InternVL3.5(38B)~\cite{zhu2025InternVL3}        & 80.2\cellcolor{second!60}& 59.8\cellcolor{second!60}& .719\cellcolor{first!60} & 40.6                         & 35.8                      & 24.0                     & .464                     &  6.23                     & 35.7                     & 24.0                     & .503                     & 17.7                     \\
+        InternVideo2.5(8B)~\cite{wang2025InternVideo25} & 74.4\cellcolor{third!60} & 53.0                     & .640                     & 31.4                         & 28.0                      & 23.8                     & .478                     &  5.60                     & 30.0                     & 22.0                     & .502                     & 14.0                     \\
+        EgoGPT(7B)~\cite{yang2025EgoLife}               & 57.6                     & 48.6                     & .660                     & 33.8                         & 35.0                      & 26.0\cellcolor{third!60} & .594\cellcolor{third!60} &  9.00                     & 30.0                     & 22.0                     & .570                     & 21.7                     \\
+        LongVA(7B)~\cite{zhang2024LongVA}               & 49.2                     & 43.0                     & .597                     & 34.2                         & 34.2                      & 24.2                     & .338                     &  3.60                     & 30.7                     & 24.0                     & .370                     & 14.3                     \\
+        \hline
+        %\textit{Open Source Methods} & & & & & & & & & & & & & \\
+        EgoButler(7B)~\cite{yang2025EgoLife}            & 38.5                     & 46.2                     & .525                     & 23.1                         & 27.7                      & 26.4                     & .415                     &  4.40                     & 21.0                     & 22.1                     & .467                     & 13.3                     \\
+        Ego-R1(3B)$^{\dag}$~\cite{tian2025EgoR1}        & 65.4                     & 49.2                     & .567                     & 23.4                         & 35.0                      & 24.0                     & .450                     &  5.20                     & 45.0                     & 24.6                     & .394                     & 12.0                     \\
+        M3Agent(70B)~\cite{long2025M3Agent}             & 59.4                     & 50.0                     & .594                     & 31.4                         & 31.4                      & 22.2                     & .451                     &  22.6\cellcolor{third!60} & 31.7                     & 30.7\cellcolor{second!60}& .460                     & 21.7\cellcolor{third!60} \\
+        HippoMM(*)$^{\dag}$~\cite{lin2025HippoMM}       & 55.6                     & 25.0                     & .628                     & 37.4                         & 16.7                      & 26.1\cellcolor{second!60}& .305                     &  4.40                     & 14.3                     & 9.33                     & .347                     & 5.00                     \\
+        % MemVerse~\cite{liu2025MemVerse} & & & & & & & & & & \\
+        EgoVidMem(*)                                    & 88.6\cellcolor{first!60} & 74.2\cellcolor{first!60} & .692\cellcolor{second!60}& 56.2\cellcolor{first!60}     & 55.0\cellcolor{first!60}  & 34.2\cellcolor{first!60} & .451                     &  30.4\cellcolor{first!60} & 59.0\cellcolor{first!60} & 38.7\cellcolor{first!60} & .571\cellcolor{third!60} & 29.7\cellcolor{first!60} \\ \hline \hline
+    \end{tabular}
+    \caption{
+        Experimental results of several methods on three egocentric benchmarks.
+        %解释一下单次MLLM的使用方法
+        Eight MLLMs (above the line) and four memorizing framework (below the line) are compared with ours.
+        These MLLMs take each ultra-long video with 64 uniformly sampled frames as input, and answer the questions in a zero-shot manner.
+        The $\dag$ symbol after Ego-R1 and HippoMM indicates that these methods require the original video as input.
+        We list the size of each model, and the asterisk symbol following HippoMM and EgoVidMem indicates these two methods do not directly provide own finetuned models, but uses other large models as modules.
+        The best, second best and third best results in each column are highlighted with pink, orange and light yellow.
+    }
+    \label{tab:exp_acc}
+\end{table} 

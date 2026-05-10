@@ -1,8 +1,17 @@
 #!/bin/bash
 
-method="Video"
-model="Qwen2.5-VL-7B-Instruct"
-d="1"
+#
+#     4Pa          2Pa         4Pb            1Pb        1Pa
+#   A1_JAKE    A5_KATRINA   EgoSchema_a   EgoLifeQA   (for testing)
+#   A2_ALICE    A6_SHURE    EgoSchema_b    
+#   A3_TASHA                EgoSchema_c
+#   A4_LUCIA                EgoSchema_d
+#
+
+
+method="NoConMem"
+model="Qwen3-VL-8B-Instruct"
+d="7"
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -34,17 +43,28 @@ done
 result_dir=$(dirname "$(readlink -f "$0")")/configs/
 
 
-if [[ "${SERVER_NAME: -1}" == "a" ]]; then
+
+
+
+if [[ "${SERVER_NAME: -3}" == "4Pa" ]]; then
     if [ $d == "1" ]; then
         files=( "A1_JAKE_D1" "A2_ALICE_D1" "A3_TASHA_D1" "A4_LUCIA_D1" )
     else
         files=( "A1_JAKE" "A2_ALICE" "A3_TASHA" "A4_LUCIA" )
     fi
-else
+elif [[ "${SERVER_NAME: -3}" == "2Pa" ]]; then
     if [ $d == "1" ]; then
-        files=( "A5_KATRINA_D1" "A6_SHURE_D1" "EgoLifeQA_D1" )
+        files=( "A5_KATRINA_D1" "A6_SHURE_D1")
     else
-        files=( "A5_KATRINA" "A6_SHURE" "EgoLifeQA" )
+        files=( "A5_KATRINA" "A6_SHURE")
+    fi
+elif [[ "${SERVER_NAME: -3}" == "4Pb" ]]; then
+    files=( "EgoSchema_a" "EgoSchema_b" "EgoSchema_c" "EgoSchema_d")
+elif [[ "${SERVER_NAME: -3}" == "1Pb" ]]; then
+    if [ $d == "1" ]; then
+        files=( "EgoLifeQA_D1" )
+    else
+        files=( "EgoLifeQA" )
     fi
 fi
 
@@ -52,6 +72,7 @@ echo "method=$method"
 echo "model=$model"
 echo "result_dir=$result_dir"
 echo "files=${files[*]}"
+echo "SERVER_NAME=$SERVER_NAME"
 
 
 
@@ -110,6 +131,11 @@ for i in "${!files[@]}"; do
     tmux kill-session -t "${runner_replicas[$i]}" 2>/dev/null
     tmux new-session -d -s "${runner_replicas[$i]}"
     tmux send-keys -t "${runner_replicas[$i]}" 'fmemo' C-m
-    tmux send-keys -t "${runner_replicas[$i]}" "python experiment.py -c ${result_dir}${file}.yaml" C-m
+    if [[ "${SERVER_NAME: -3}" == "4Pb" ]]; then
+        tmux send-keys -t "${runner_replicas[$i]}" "${result_dir}${file}.bash" C-m
+    else
+        tmux send-keys -t "${runner_replicas[$i]}" "python experiment.py -c ${result_dir}${file}.yaml" C-m
+    fi
 done
+
 

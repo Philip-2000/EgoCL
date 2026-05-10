@@ -1,5 +1,13 @@
 import os, json, numpy as np
 
+
+def _alias_numpy_core():
+    return
+    import sys
+    import numpy.core
+    if "numpy._core" not in sys.modules:
+        sys.modules["numpy._core"] = numpy.core
+
 class StringEncoding:
     def __init__(self, ENCODINGS, index, part=(0,0), force_encoding=False, screenshot_id=-1, screenshot_content="path"):
         self.ENCODINGS = ENCODINGS
@@ -93,6 +101,16 @@ class StringEncodings:
         #还有存储的过程，存储格式的问题，他是跟着load过程出来的吗？
 
         #哦对还有文件系统，文件命名等问题，
+    def encode_all(self):
+        from tqdm import tqdm
+        batch_size = 32
+        for i in tqdm(range(0, len(self.ENCODINGS), batch_size), desc="Encoding StringEncodings"):
+            batch = self.ENCODINGS[i:i+batch_size]
+            strings = [e.string for e in batch]
+            encodes = self.ENCODER(strings)
+            for j,e in enumerate(batch):
+                e._encode = encodes[j]
+
     
     def to_npz(self):
         # ENCODINGS = [e.to_dict() for e in self.ENCODINGS]
@@ -103,13 +121,23 @@ class StringEncodings:
             "cover": self.cover,
             "indexs": [e.index for e in self.ENCODINGS],
             "parts": [e.part for e in self.ENCODINGS],
-            "encodes": [e.encode.tolist() if e.encode is not None else None for e in self.ENCODINGS], #for deeper storage efficiency, we can store encodes as a 2D numpy array
+            "encodes": [e._encode.tolist() if e._encode is not None else None for e in self.ENCODINGS], #for deeper storage efficiency, we can store encodes as a 2D numpy array
         }
+
+        len_e=-1
+        for e in [_ for _ in dict_data["encodes"] if _ is not None]:
+            if len_e == -1: len_e = len(e)
+            else: assert len_e == len(e), f"Encode length mismatch in StringEncodings. Expected {len_e}, got {len(e)}."
+        len_e = max(len_e, 0)
+        for i,e in enumerate(dict_data["encodes"]): dict_data["encodes"][i] = [0.0] * len_e if e is None else e
+        
         # print(f"StringEncodings to_npz data size: indexs {len(dict_data['indexs'])}, parts {len(dict_data['parts'])}, encodes {len(dict_data['encodes'])}")
         return dict_data
 
     def from_npz(self, data):
-        assert self.METHOD.ENCODER_PATH == data["ENCODER_PATH"], "ENCODER_PATH mismatch when loading StringEncodings."
+        if "arr_0" in data: data = data["arr_0"].item()
+        assert str(self.METHOD.ENCODER_PATH).split(":")[0] == str(data["ENCODER_PATH"]).split(":")[0], f"ENCODER_PATH mismatch when loading StringEncodings. self.METHOD.ENCODER_PATH: {self.METHOD.ENCODER_PATH}, data['ENCODER_PATH']: {data['ENCODER_PATH']}."
+        #ignore the part after ":" which is only a version for GPU id
         self.entire = data["entire"]
         self.length = data["length"]
         self.cover = data["cover"]
@@ -142,10 +170,16 @@ class StringEncodings:
         if self.encodes_config['load_not']: return
         if self.encodes_config['load_force']:
             # print(self.encodes_config['load_force'], self.file_name, os.path.exists(self.file_name))
-            assert os.path.exists(self.file_name), f"StringEncodings file not found: {self.file_name} while load_force is set."
-            self.from_npz(np.load(self.file_name, allow_pickle=True))
+            self_name = self.EXPERIMENT.output_name if hasattr(self.EXPERIMENT, 'output_name') else self.METHOD.EXPERIMENT.name
+            load_name = self.encodes_config['load_ver'] if 'load_ver' in self.encodes_config and isinstance(self.encodes_config['load_ver'], str) else self_name
+            file_name = self.file_name.replace(self_name, load_name)
+            assert os.path.exists(file_name), f"StringEncodings file not found: {file_name} while load_force is set."
+            print(f"Loading StringEncodings from file: {file_name}")
+            _alias_numpy_core()  # align pickle module path for older numpy saves
+            self.from_npz(np.load(file_name, allow_pickle=True))
             return
         if os.path.exists(self.file_name):
+            _alias_numpy_core()  # align pickle module path for older numpy saves
             self.from_npz(np.load(self.file_name, allow_pickle=True))
 
     def present(self, i):
@@ -170,20 +204,20 @@ class StringEncodings:
     def append_atom(self, atom, atom_id, force_encoding=False):
         if self.entire:
             self.ENCODINGS.append(StringEncoding(self, atom_id, force_encoding=force_encoding))
-            _ = self.ENCODINGS[-1].encode
+            # _ = self.ENCODINGS[-1].encode
         else:
             self.ENCODINGS.append(StringEncoding(self, atom_id, part=(-1, -1), force_encoding=force_encoding))
-            _ = self.ENCODINGS[-1].encode
+            # _ = self.ENCODINGS[-1].encode
             L,start = len(atom.meta.get("transcripts", [])),0
             while start < L:
                 self.ENCODINGS.append(StringEncoding(self, atom_id, part=(start, min(start + self.length - 1, L - 1)), force_encoding=force_encoding))
-                _ = self.ENCODINGS[-1].encode
+                # _ = self.ENCODINGS[-1].encode
                 start += 1 if self.cover else self.length
         for i,ss in enumerate(atom.meta.get("screenshots", [])):
             self.ENCODINGS.append(StringEncoding(self, atom_id, part=(-1, -1), screenshot_id=i, force_encoding=force_encoding, screenshot_content="path"))
-            _ = self.ENCODINGS[-1].encode
+            # _ = self.ENCODINGS[-1].encode
             self.ENCODINGS.append(StringEncoding(self, atom_id, part=(-1, -1), screenshot_id=i, force_encoding=force_encoding, screenshot_content="description"))
-            _ = self.ENCODINGS[-1].encode
+            # _ = self.ENCODINGS[-1].encode
         
     @property
     def METHOD(self):
@@ -231,8 +265,3 @@ class StringEncodings:
         import numpy as np
         indices = [i for i,e in enumerate(self.ENCODINGS) if search_field[e.field]]
         return np.vstack([self.ENCODINGS[i].encode for i in indices]), indices
-
-    def encode_all(self):
-        sims = self.ENCODER.encode([e.string for e in self.ENCODINGS])
-        for i,e in enumerate(self.ENCODINGS):
-            e._encode = sims[i]
